@@ -1,0 +1,207 @@
+[
+  {
+    "id": "ord-1788780095657-339",
+    "orderCode": "AYMAN-498043",
+    "locale": "ar",
+    "customerName": "خالد سمير ",
+    "phone": "712181905",
+    "city": "صنعاء",
+    "address": "الجامعه",
+    "notes": null,
+    "subtotal": 4500,
+    "shippingFee": 1500,
+    "totalAmount": 6000,
+    "status": "DELIVERED",
+    "receiptUrl": null,
+    "items": [
+      {
+        "id": "item-1788780095657-0",
+        "orderId": "ord-1788780095657",
+        "productId": "prod-1",
+        "variantId": "var-lip-1",
+        "nameAr": "أحمر شفاه مات مخملي",
+        "nameEn": "Velvet Matte Lipstick",
+        "variantAr": "01 قرمزي ملكي",
+        "variantEn": "01 Royal Crimson",
+        "unitPrice": 4500,
+        "quantity": 1,
+        "itemTotal": 4500
+      }
+    ],
+    "createdAt": "2026-09-07T11:21:35.657Z",
+    "updatedAt": "2026-09-07T11:27:57.437Z"
+  },
+  {
+    "id": "ord-1788766204710-616",
+    "orderCode": "AYMAN-924690",
+    "locale": "ar",
+    "customerName": "وسيم خالد الهره",
+    "phone": "778878609",
+    "city": "صنعاء",
+    "address": "مذبح",
+    "notes": null,
+    "subtotal": 24000,
+    "shippingFee": 1500,
+    "totalAmount": 25500,
+    "status": "PENDING_PAYMENT",
+    "receiptUrl": null,
+    "items": [
+      {
+        "id": "item-1788766204710-0",
+        "orderId": "ord-1788766204710",
+        "productId": "prod-3",
+        "variantId": "var-oud-1",
+        "nameAr": "عطر العود الملكي الخاص",
+        "nameEn": "Royal Oud Private Parfum",
+        "variantAr": "حجم 50 مل",
+        "variantEn": "50ml Flacon",
+        "unitPrice": 24000,
+        "quantity": 1,
+        "itemTotal": 24000
+      }
+    ],
+    "createdAt": "2026-09-07T07:30:04.710Z",
+    "updatedAt": "2026-09-07T07:30:04.710Z"
+  },
+  {
+    "id": "ord-1788751295158-380",
+    "orderCode": "AYMAN-499675",
+    "locale": "ar",
+    "customerName": "ALI",
+    "phone": "716999169",
+    "city": "تعز",
+    "address": "الحرية",
+    "notes": null,
+    "subtotal": 3200,
+    "shippingFee": 1500,
+    "totalAmount": 4700,
+    "status": "PROCESSING",
+    "receiptUrl": null,
+    "items": [
+      {
+        "id": "item-1788751295160-0",
+        "orderId": "ord-1788751295160",
+        "productId": "prod-6",
+        "variantId": "var-scf-1",
+        "nameAr": "طرحة شيفون حريري فاخرة",
+        "nameEn": "Luxury Silk Chiffon Scarf",
+        "variantAr": "أبيض لؤلؤي قياسي",
+        "variantEn": "Pearl White قياسي",
+        "unitPrice": 3200,
+        "quantity": 1,
+        "itemTotal": 3200
+      }
+    ],
+    "createdAt": "2026-09-07T03:21:35.160Z",
+    "updatedAt": "2026-09-07T03:23:56.903Z"
+  },
+  {
+    "id": "ord-1788748437029-518",
+    "orderCode": "AYMAN-488101",
+    "locale": "ar",
+    "customerName": "علي",
+    "phone": "716999169",
+    "city": "صنعاء",
+    "address": "شارع تعز",
+    "notes": null,
+    "subtotal": 4500,
+    "shippingFee": 1500,
+    "totalAmount": 6000,
+    "status": "PENDING_PAYMENT",
+    "receiptUrl": null,
+    "items": [
+      {
+        "id": "item-1788748437029-0",
+        "orderId": "ord-1788748437029",
+        "productId": "prod-1",
+        "variantId": "var-1788746582616-0",
+        "nameAr": "منتج متجر أيمن",
+        "nameEn": "Ayman Store Product",
+        "variantAr": "قياسي",
+        "variantEn": "Standard",
+        "unitPrice": 4500,
+        "quantity": 1,
+        "itemTotal": 4500
+      }
+    ],
+    "createdAt": "2026-09-07T02:33:57.029Z",
+    "updatedAt": "2026-09-07T03:05:21.063Z"
+  },
+  {
+    "id": "ord-1788747901760-887",
+    "orderCode": "AYMAN-193363",
+    "locale": "ar",
+    "customerName": "أيمن محمد قائد",
+    "phone": "779881824",
+    "city": "صنعاء",
+    "address": "شارع الستين الجنوبي",
+    "notes": "يرجى الاتصال قبل الوصول",
+    "subtotal": 48000,
+    "shippingFee": 1500,
+    "totalAmount": 49500,
+    "status": "DELIVERED",
+    "receiptUrl": null,
+    "items": [
+      {
+        "id": "item-1788747901761-0",
+        "orderId": "ord-1788747901761",
+        "productId": "prod-3",
+        "variantId": "var-oud-1",
+        "nameAr": "عطر العود الملكي الخاص",
+        "nameEn": "Royal Oud Private Parfum",
+        "variantAr": "حجم 50 مل",
+        "variantEn": "50ml Flacon",
+        "unitPrice": 24000,
+        "quantity": 2,
+        "itemTotal": 48000
+      }
+    ],
+    "createdAt": "2026-09-07T02:25:01.761Z",
+    "updatedAt": "2026-09-07T02:37:25.235Z"
+  },
+  {
+    "id": "ord-sample-1",
+    "orderCode": "AYMAN-782419",
+    "locale": "ar",
+    "customerName": "فاطمة أحمد الكبسي",
+    "phone": "777123456",
+    "city": "صنعاء",
+    "address": "شارع حدة - بجوار فندق البستان",
+    "notes": "يرجى الاتصال قبل الوصول للتسليم",
+    "subtotal": 22500,
+    "shippingFee": 1500,
+    "totalAmount": 24000,
+    "status": "DELIVERED",
+    "receiptUrl": null,
+    "items": [
+      {
+        "id": "item-1",
+        "orderId": "ord-sample-1",
+        "productId": "prod-2",
+        "variantId": "var-aby-2",
+        "nameAr": "عباية كلاسيكية فاخرة",
+        "nameEn": "Luxury Classic Abaya",
+        "variantAr": "أسود داكن 54",
+        "variantEn": "Deep Black 54",
+        "unitPrice": 18000,
+        "quantity": 1,
+        "itemTotal": 18000
+      },
+      {
+        "id": "item-2",
+        "orderId": "ord-sample-1",
+        "productId": "prod-1",
+        "variantId": "var-lip-1",
+        "nameAr": "أحمر شفاه مات مخملي",
+        "nameEn": "Velvet Matte Lipstick",
+        "variantAr": "01 قرمزي ملكي",
+        "variantEn": "01 Royal Crimson",
+        "unitPrice": 4500,
+        "quantity": 1,
+        "itemTotal": 4500
+      }
+    ],
+    "createdAt": "2026-09-07T00:22:38.460Z",
+    "updatedAt": "2026-09-07T00:22:38.463Z"
+  }
+]
