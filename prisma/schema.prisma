@@ -30,6 +30,8 @@ model Category {
   type      CategoryType
   products  Product[]
   createdAt DateTime     @default(now())
+
+  @@index([slug])
 }
 
 model Product {
@@ -48,6 +50,11 @@ model Product {
   orderItems  OrderItem[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+
+  @@index([categoryId])
+  @@index([slug])
+  @@index([isFeatured])
+  @@index([createdAt])
 }
 
 model ProductVariant {
@@ -63,6 +70,9 @@ model ProductVariant {
   stockQuantity Int         @default(0)
   orderItems    OrderItem[]
   createdAt     DateTime    @default(now())
+
+  @@index([productId])
+  @@index([sku])
 }
 
 model Order {
@@ -85,6 +95,8 @@ model Order {
 
   @@index([orderCode])
   @@index([phone])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model OrderItem {
@@ -102,4 +114,8 @@ model OrderItem {
   unitPrice  Decimal         @db.Decimal(12, 2)
   quantity   Int
   itemTotal  Decimal         @db.Decimal(12, 2)
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([variantId])
 }

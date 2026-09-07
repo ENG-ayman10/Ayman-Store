@@ -14,12 +14,45 @@
   }
 }
 
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Fast touch & instant tap response for all buttons & links (removes 300ms mobile delay) */
+button,
+a,
+input,
+select,
+textarea,
+[role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Instant subtle tactile feedback on click/press with zero lag */
+button:not(:disabled):active,
+a:not([disabled]):active,
+[role="button"]:active {
+  transform: scale(0.98);
+  transition: transform 0.05s ease-out;
+}
+
+/* GPU acceleration for modals, drawers, and fixed overlays */
+.gpu-layer {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
 /* Custom scrollbars */

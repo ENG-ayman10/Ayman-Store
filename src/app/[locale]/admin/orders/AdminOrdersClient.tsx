@@ -30,15 +30,22 @@ export function AdminOrdersClient({ initialOrders, locale }: AdminOrdersClientPr
     { id: "CANCELLED", labelAr: "ملغي", labelEn: "Cancelled" },
   ];
 
-  // Fetch latest orders from API
+  // Fetch latest orders from API with shallow equality check to prevent unnecessary re-renders
   const refreshOrders = useCallback(async (showLoading = false) => {
     if (showLoading) setIsRefreshing(true);
     try {
-      const res = await fetch("/api/orders?t=" + Date.now(), { cache: "no-store" });
+      const res = await fetch("/api/orders", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.orders)) {
-          setOrders(data.orders);
+          setOrders((prev) => {
+            if (prev.length !== data.orders.length) return data.orders;
+            const isIdentical = prev.every((oldO, i) => {
+              const newO = data.orders[i];
+              return newO && oldO.id === newO.id && oldO.status === newO.status && oldO.updatedAt === newO.updatedAt;
+            });
+            return isIdentical ? prev : data.orders;
+          });
           setLastRefreshedAt(
             new Date().toLocaleTimeString(isAr ? "ar-YE" : "en-US", {
               hour: "2-digit",
