@@ -11,17 +11,45 @@ import type { OrderType, OrderStatus } from "@/types";
 import { revalidatePath } from "next/cache";
 import { isAdminAuthenticated } from "@/actions/auth";
 
+// Helper to convert Prisma Order to OrderType
+function mapPrismaOrderToOrderType(dbOrder: any): OrderType {
+  return {
+    id: dbOrder.id,
+    orderCode: dbOrder.orderCode,
+    locale: dbOrder.locale,
+    customerName: dbOrder.customerName,
+    phone: dbOrder.phone,
+    city: dbOrder.city,
+    address: dbOrder.address,
+    notes: dbOrder.notes,
+    subtotal: Number(dbOrder.subtotal),
+    shippingFee: Number(dbOrder.shippingFee),
+    totalAmount: Number(dbOrder.totalAmount),
+    status: dbOrder.status as OrderStatus,
+    receiptUrl: dbOrder.receiptUrl,
+    items: (dbOrder.items || []).map((i: any) => ({
+      id: i.id,
+      orderId: i.orderId,
+      productId: i.productId,
+      variantId: i.variantId,
+      nameAr: i.nameAr,
+      nameEn: i.nameEn,
+      variantAr: i.variantAr,
+      variantEn: i.variantEn,
+      unitPrice: Number(i.unitPrice),
+      quantity: i.quantity,
+      itemTotal: Number(i.itemTotal),
+    })),
+    createdAt: typeof dbOrder.createdAt === "string" ? dbOrder.createdAt : dbOrder.createdAt?.toISOString() || new Date().toISOString(),
+    updatedAt: typeof dbOrder.updatedAt === "string" ? dbOrder.updatedAt : dbOrder.updatedAt?.toISOString() || new Date().toISOString(),
+  };
+}
+
 export async function trackOrder(query: string): Promise<OrderType | null> {
   const trimmed = query.trim();
   if (!trimmed) return null;
 
-  // 1. Try disk storage first (fast, guaranteed persistent)
-  const diskOrder = await findOrderOnDisk(trimmed);
-  if (diskOrder) {
-    return diskOrder;
-  }
-
-  // 2. Try Prisma if available
+  // 1. Primary: Try Prisma PostgreSQL
   try {
     const dbOrder = await prisma.order.findFirst({
       where: {
@@ -37,49 +65,46 @@ export async function trackOrder(query: string): Promise<OrderType | null> {
     });
 
     if (dbOrder) {
-      return {
-        id: dbOrder.id,
-        orderCode: dbOrder.orderCode,
-        locale: dbOrder.locale,
-        customerName: dbOrder.customerName,
-        phone: dbOrder.phone,
-        city: dbOrder.city,
-        address: dbOrder.address,
-        notes: dbOrder.notes,
-        subtotal: Number(dbOrder.subtotal),
-        shippingFee: Number(dbOrder.shippingFee),
-        totalAmount: Number(dbOrder.totalAmount),
-        status: dbOrder.status as OrderStatus,
-        receiptUrl: dbOrder.receiptUrl,
-        items: dbOrder.items.map((i) => ({
-          id: i.id,
-          orderId: i.orderId,
-          productId: i.productId,
-          variantId: i.variantId,
-          nameAr: i.nameAr,
-          nameEn: i.nameEn,
-          variantAr: i.variantAr,
-          variantEn: i.variantEn,
-          unitPrice: Number(i.unitPrice),
-          quantity: i.quantity,
-          itemTotal: Number(i.itemTotal),
-        })),
-        createdAt: dbOrder.createdAt.toISOString(),
-        updatedAt: dbOrder.updatedAt.toISOString(),
-      };
+      return mapPrismaOrderToOrderType(dbOrder);
     }
-  } catch {
-    // Prisma optional
+  } catch (error) {
+    console.warn("Prisma trackOrder fallback:", error);
+  }
+
+  // 2. Fallback: Try disk storage
+  const diskOrder = await findOrderOnDisk(trimmed);
+  if (diskOrder) {
+    return diskOrder;
   }
 
   return null;
 }
 
 export async function getAdminOrders(filterStatus?: OrderStatus | "ALL"): Promise<OrderType[]> {
-  // Guaranteed persistent read from disk
-  const allOrders = await readOrdersFromDisk();
+  // 1. Primary: Try Prisma PostgreSQL (Production Serverless database)
+  try {
+    const whereClause: Record<string, any> = {};
+    if (filterStatus && filterStatus !== "ALL") {
+      whereClause.status = filterStatus;
+    }
 
-  // Sort descending by creation date
+    const dbOrders = await prisma.order.findMany({
+      where: whereClause,
+      include: {
+        items: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (dbOrders && dbOrders.length > 0) {
+      return dbOrders.map(mapPrismaOrderToOrderType);
+    }
+  } catch (error) {
+    console.warn("Prisma getAdminOrders query error, falling back to disk/cache:", error);
+  }
+
+  // 2. Fallback to disk storage if database has no orders or is unreachable
+  const allOrders = await readOrdersFromDisk();
   allOrders.sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
@@ -96,22 +121,40 @@ export async function updateOrderStatus(
   status: OrderStatus
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // 1. Guaranteed update on disk
-    const updated = await updateOrderOnDisk(orderId, status);
+    let updated = false;
 
-    // 2. Also try Prisma if running
+    // 1. Primary: Update in Prisma PostgreSQL
     try {
       await prisma.order.update({
         where: { id: orderId },
         data: { status },
       });
+      updated = true;
     } catch {
-      // Prisma optional
+      // Try by orderCode if id didn't match directly
+      try {
+        await prisma.order.update({
+          where: { orderCode: orderId },
+          data: { status },
+        });
+        updated = true;
+      } catch (prismaErr) {
+        console.warn("Prisma order update fallback:", prismaErr);
+      }
+    }
+
+    // 2. Also update on disk for local dev consistency
+    try {
+      const diskUpdated = await updateOrderOnDisk(orderId, status);
+      if (diskUpdated) updated = true;
+    } catch (diskErr) {
+      console.warn("Disk update order error:", diskErr);
     }
 
     revalidatePath("/[locale]/admin/orders", "page");
     revalidatePath("/[locale]/admin", "page");
     revalidatePath("/[locale]/track", "page");
+    revalidatePath("/api/orders", "page");
 
     return { success: updated };
   } catch (error) {
@@ -129,18 +172,42 @@ export async function deleteOrder(
   }
 
   try {
-    const deleted = await deleteOrderFromDisk(orderId);
+    let deleted = false;
 
+    // 1. Primary: Delete in Prisma PostgreSQL
     try {
+      await prisma.orderItem.deleteMany({
+        where: { orderId },
+      });
       await prisma.order.delete({
         where: { id: orderId },
       });
+      deleted = true;
     } catch {
-      // Prisma optional
+      try {
+        const found = await prisma.order.findUnique({ where: { orderCode: orderId } });
+        if (found) {
+          await prisma.orderItem.deleteMany({ where: { orderId: found.id } });
+          await prisma.order.delete({ where: { id: found.id } });
+          deleted = true;
+        }
+      } catch (prismaErr) {
+        console.warn("Prisma delete fallback:", prismaErr);
+      }
+    }
+
+    // 2. Also delete on disk
+    try {
+      const diskDeleted = await deleteOrderFromDisk(orderId);
+      if (diskDeleted) deleted = true;
+    } catch (diskErr) {
+      console.warn("Disk delete order error:", diskErr);
     }
 
     revalidatePath("/[locale]/admin/orders", "page");
     revalidatePath("/[locale]/admin", "page");
+    revalidatePath("/[locale]/track", "page");
+    revalidatePath("/api/orders", "page");
 
     return { success: deleted };
   } catch (error) {

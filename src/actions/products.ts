@@ -8,18 +8,78 @@ import {
   updateProductOnDisk,
   deleteProductFromDisk,
 } from "@/lib/productStorage";
-import type { ProductType } from "@/types";
+import type { ProductType, CategoryType } from "@/types";
 import { revalidatePath } from "next/cache";
 import { isAdminAuthenticated } from "@/actions/auth";
+
+// Helper to convert Prisma product to ProductType
+function mapPrismaProductToProductType(p: any): ProductType {
+  return {
+    id: p.id,
+    nameAr: p.nameAr,
+    nameEn: p.nameEn,
+    slug: p.slug,
+    descAr: p.descAr,
+    descEn: p.descEn,
+    basePrice: Number(p.basePrice),
+    categoryId: p.categoryId,
+    category: p.category
+      ? {
+          id: p.category.id,
+          nameAr: p.category.nameAr,
+          nameEn: p.category.nameEn,
+          slug: p.category.slug,
+          type: p.category.type as CategoryType,
+        }
+      : undefined,
+    images: p.images || [],
+    isFeatured: Boolean(p.isFeatured),
+    variants: (p.variants || []).map((v: any) => ({
+      id: v.id,
+      productId: v.productId,
+      sku: v.sku,
+      attributes: (v.attributes as any) || {},
+      priceOverride: v.priceOverride !== null && v.priceOverride !== undefined ? Number(v.priceOverride) : null,
+      stockQuantity: v.stockQuantity || 0,
+    })),
+    createdAt: typeof p.createdAt === "string" ? p.createdAt : p.createdAt?.toISOString(),
+    updatedAt: typeof p.updatedAt === "string" ? p.updatedAt : p.updatedAt?.toISOString(),
+  };
+}
 
 export async function getProducts(options?: {
   categorySlug?: string;
   featured?: boolean;
 }): Promise<ProductType[]> {
-  // 1. Guaranteed persistent read from disk
+  // 1. Primary: Query Prisma PostgreSQL
+  try {
+    const whereClause: Record<string, any> = {};
+    if (options?.categorySlug && options.categorySlug !== "all") {
+      whereClause.category = { slug: options.categorySlug };
+    }
+    if (options?.featured !== undefined) {
+      whereClause.isFeatured = options.featured;
+    }
+
+    const dbProducts = await prisma.product.findMany({
+      where: whereClause,
+      include: {
+        category: true,
+        variants: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (dbProducts && dbProducts.length > 0) {
+      return dbProducts.map(mapPrismaProductToProductType);
+    }
+  } catch (error) {
+    console.warn("Prisma getProducts query error, falling back to disk/cache:", error);
+  }
+
+  // 2. Fallback to disk storage
   try {
     let products = await readProductsFromDisk();
-
     if (options?.categorySlug && options.categorySlug !== "all") {
       products = products.filter((p) => p.category?.slug === options.categorySlug);
     }
@@ -27,11 +87,11 @@ export async function getProducts(options?: {
       products = products.filter((p) => p.isFeatured === options.featured);
     }
     return products;
-  } catch (error) {
-    console.warn("Product disk read fallback:", error);
+  } catch {
+    // Disk fallback
   }
 
-  // Fallback
+  // 3. Static fallback
   let filtered = [...FALLBACK_PRODUCTS];
   if (options?.categorySlug && options.categorySlug !== "all") {
     filtered = filtered.filter((p) => p.category?.slug === options.categorySlug);
@@ -43,6 +103,26 @@ export async function getProducts(options?: {
 }
 
 export async function getProductBySlug(slug: string): Promise<ProductType | null> {
+  // 1. Primary: Prisma PostgreSQL
+  try {
+    const dbProduct = await prisma.product.findFirst({
+      where: {
+        OR: [{ slug }, { id: slug }],
+      },
+      include: {
+        category: true,
+        variants: true,
+      },
+    });
+
+    if (dbProduct) {
+      return mapPrismaProductToProductType(dbProduct);
+    }
+  } catch (error) {
+    console.warn("Prisma getProductBySlug fallback:", error);
+  }
+
+  // 2. Disk fallback
   try {
     const products = await readProductsFromDisk();
     const found = products.find((p) => p.slug === slug || p.id === slug);
@@ -51,10 +131,11 @@ export async function getProductBySlug(slug: string): Promise<ProductType | null
     // Disk fallback
   }
 
-  return FALLBACK_PRODUCTS.find((p) => p.slug === slug) || null;
+  return FALLBACK_PRODUCTS.find((p) => p.slug === slug || p.id === slug) || null;
 }
 
 export async function getCategories() {
+  // 1. Primary: Prisma PostgreSQL
   try {
     const cats = await prisma.category.findMany({
       orderBy: { nameAr: "asc" },
@@ -100,6 +181,56 @@ export async function createProduct(input: CreateProductInput) {
       .replace(/^-+|-+$/g, "") ||
     `prod-${Date.now()}`;
 
+  // 1. Primary: Save to Prisma PostgreSQL
+  try {
+    // Resolve categoryId (whether slug or UUID)
+    let category = await prisma.category.findFirst({
+      where: {
+        OR: [{ id: input.categoryId }, { slug: input.categoryId }],
+      },
+    });
+
+    if (!category) {
+      const firstCat = await prisma.category.findFirst();
+      if (firstCat) category = firstCat;
+    }
+
+    if (category) {
+      const created = await prisma.product.create({
+        data: {
+          nameAr: input.nameAr,
+          nameEn: input.nameEn,
+          slug: generatedSlug,
+          descAr: input.descAr,
+          descEn: input.descEn,
+          basePrice: input.basePrice,
+          categoryId: category.id,
+          images: input.images.length > 0 ? input.images : ["/uploads/lipstick.webp"],
+          isFeatured: Boolean(input.isFeatured),
+          variants: {
+            create: input.variants.map((v, i) => ({
+              sku: v.sku || `SKU-${Date.now()}-${i}`,
+              attributes: v.attributes,
+              stockQuantity: v.stockQuantity,
+              priceOverride: v.priceOverride ?? null,
+            })),
+          },
+        },
+        include: {
+          category: true,
+          variants: true,
+        },
+      });
+
+      revalidatePath("/[locale]", "layout");
+      revalidatePath("/[locale]/admin/products", "page");
+      return { success: true, product: mapPrismaProductToProductType(created) };
+    }
+  } catch (error) {
+    console.error("Prisma createProduct error:", error);
+  }
+
+  // 2. Disk fallback
   const category =
     FALLBACK_CATEGORIES.find(
       (c) => c.id === input.categoryId || c.slug === input.categoryId
@@ -132,40 +263,12 @@ export async function createProduct(input: CreateProductInput) {
     updatedAt: new Date().toISOString(),
   };
 
-  // 1. Guaranteed disk storage
   try {
     await addProductToDisk(newProduct);
   } catch (err) {
-    console.error("Failed to write product to disk:", err);
+    console.warn("Disk addProduct error:", err);
   }
   FALLBACK_PRODUCTS.unshift(newProduct);
-
-  // 2. Try Prisma if available
-  try {
-    await prisma.product.create({
-      data: {
-        nameAr: newProduct.nameAr,
-        nameEn: newProduct.nameEn,
-        slug: newProduct.slug,
-        descAr: newProduct.descAr,
-        descEn: newProduct.descEn,
-        basePrice: newProduct.basePrice,
-        categoryId: category.id,
-        images: newProduct.images,
-        isFeatured: newProduct.isFeatured,
-        variants: {
-          create: variants.map((v) => ({
-            sku: v.sku,
-            attributes: v.attributes,
-            stockQuantity: v.stockQuantity,
-            priceOverride: v.priceOverride,
-          })),
-        },
-      },
-    });
-  } catch {
-    // Prisma optional
-  }
 
   revalidatePath("/[locale]", "layout");
   revalidatePath("/[locale]/admin/products", "page");
@@ -178,7 +281,26 @@ export async function updateProduct(id: string, input: Partial<CreateProductInpu
     return { success: false, error: "غير مصرح لك بتعديل المنتجات" };
   }
 
-  // 1. Guaranteed update on disk
+  // 1. Primary: Prisma PostgreSQL
+  try {
+    const updateData: Record<string, any> = {};
+    if (input.nameAr) updateData.nameAr = input.nameAr;
+    if (input.nameEn) updateData.nameEn = input.nameEn;
+    if (input.descAr) updateData.descAr = input.descAr;
+    if (input.descEn) updateData.descEn = input.descEn;
+    if (input.basePrice !== undefined) updateData.basePrice = input.basePrice;
+    if (input.images) updateData.images = input.images;
+    if (input.isFeatured !== undefined) updateData.isFeatured = input.isFeatured;
+
+    await prisma.product.update({
+      where: { id },
+      data: updateData,
+    });
+  } catch (error) {
+    console.warn("Prisma updateProduct fallback:", error);
+  }
+
+  // 2. Disk update
   try {
     await updateProductOnDisk(id, {
       nameAr: input.nameAr,
@@ -190,7 +312,7 @@ export async function updateProduct(id: string, input: Partial<CreateProductInpu
       isFeatured: input.isFeatured,
     });
   } catch (err) {
-    console.error("Failed to update product on disk:", err);
+    console.warn("Disk updateProduct error:", err);
   }
 
   // Update in memory fallback
@@ -209,25 +331,6 @@ export async function updateProduct(id: string, input: Partial<CreateProductInpu
     };
   }
 
-  // Try Prisma
-  try {
-    const updateData: Record<string, unknown> = {};
-    if (input.nameAr) updateData.nameAr = input.nameAr;
-    if (input.nameEn) updateData.nameEn = input.nameEn;
-    if (input.descAr) updateData.descAr = input.descAr;
-    if (input.descEn) updateData.descEn = input.descEn;
-    if (input.basePrice !== undefined) updateData.basePrice = input.basePrice;
-    if (input.images) updateData.images = input.images;
-    if (input.isFeatured !== undefined) updateData.isFeatured = input.isFeatured;
-
-    await prisma.product.update({
-      where: { id },
-      data: updateData,
-    });
-  } catch {
-    // Prisma optional
-  }
-
   revalidatePath("/[locale]", "layout");
   revalidatePath("/[locale]/admin/products", "page");
   return { success: true };
@@ -239,24 +342,24 @@ export async function deleteProduct(id: string) {
     return { success: false, error: "غير مصرح لك بحذف المنتجات" };
   }
 
-  // 1. Delete on disk
+  // 1. Primary: Delete in Prisma PostgreSQL
+  try {
+    await prisma.productVariant.deleteMany({ where: { productId: id } });
+    await prisma.product.delete({ where: { id } });
+  } catch (error) {
+    console.warn("Prisma deleteProduct fallback:", error);
+  }
+
+  // 2. Delete on disk
   try {
     await deleteProductFromDisk(id);
   } catch (err) {
-    console.error("Failed to delete product on disk:", err);
+    console.warn("Disk deleteProduct error:", err);
   }
 
   const idx = FALLBACK_PRODUCTS.findIndex((p) => p.id === id || p.slug === id);
   if (idx !== -1) {
     FALLBACK_PRODUCTS.splice(idx, 1);
-  }
-
-  // Try Prisma
-  try {
-    await prisma.productVariant.deleteMany({ where: { productId: id } });
-    await prisma.product.delete({ where: { id } });
-  } catch {
-    // Prisma optional
   }
 
   revalidatePath("/[locale]", "layout");
