@@ -211,7 +211,22 @@ export async function processOrderCheckout(input: CheckoutInput) {
     }
     inMemoryOrders.unshift(orderRecord);
 
-    // 3. Revalidate paths immediately so Admin Orders & Dashboard update
+    // 3. Send optional Telegram notification if configured
+    try {
+      const { sendTelegramOrderNotification } = await import("@/lib/telegram");
+      await sendTelegramOrderNotification({
+        orderCode: generatedCode,
+        customerName,
+        phone,
+        city,
+        totalAmount,
+        itemsCount: orderItemsData.length,
+      });
+    } catch {
+      // Ignore
+    }
+
+    // 4. Revalidate paths immediately so Admin Orders & Dashboard update
     try {
       revalidatePath("/[locale]/admin/orders", "page");
       revalidatePath("/[locale]/admin", "page");
@@ -221,7 +236,7 @@ export async function processOrderCheckout(input: CheckoutInput) {
       // Revalidate in request context
     }
 
-    // 4. Generate WhatsApp notification link
+    // 5. Generate WhatsApp notification link
     const whatsappRedirectUrl = generateWhatsAppOrderUrl({
       orderCode: generatedCode,
       customerName,
