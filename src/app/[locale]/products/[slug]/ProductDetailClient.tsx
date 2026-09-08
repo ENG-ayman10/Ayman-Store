@@ -7,6 +7,7 @@ import type { ProductType, ProductVariantType } from "@/types";
 import { VariantSelector } from "@/components/products/VariantSelector";
 import { CurrencyBadge } from "@/components/common/CurrencyBadge";
 import { useCartStore } from "@/store/useCartStore";
+import { useWishlistStore } from "@/store/useWishlistStore";
 import { STORE_CONFIG } from "@/config/payment";
 import {
   ShoppingBag,
@@ -22,6 +23,7 @@ import {
   Building2,
   ArrowRight,
   ArrowLeft,
+  Heart,
 } from "lucide-react";
 
 interface ProductDetailClientProps {
@@ -38,6 +40,8 @@ export function ProductDetailClient({ product, locale }: ProductDetailClientProp
   const [addedAnimation, setAddedAnimation] = useState(false);
 
   const { addItem, openCart } = useCartStore();
+  const { toggleWishlist, isInWishlist } = useWishlistStore();
+  const isFavorite = isInWishlist(product.id);
 
   const currentPrice = Number(selectedVariant?.priceOverride ?? product.basePrice);
   const originalPrice = Math.round(currentPrice * 1.18);
@@ -123,6 +127,21 @@ export function ProductDetailClient({ product, locale }: ProductDetailClientProp
                 </span>
               </div>
             )}
+
+            {/* Wishlist Heart Button on Image */}
+            <button
+              type="button"
+              onClick={() => toggleWishlist(product)}
+              aria-label={isAr ? "حفظ في المفضلة" : "Save to Wishlist"}
+              className={`absolute top-4 end-4 p-3 rounded-full backdrop-blur-md shadow-md transition-all active:scale-90 z-10 ${
+                isFavorite
+                  ? "bg-rose-500 text-white shadow-rose-500/30"
+                  : "bg-white/80 dark:bg-neutral-900/80 text-neutral-700 dark:text-neutral-200 hover:text-rose-500 hover:bg-white"
+              }`}
+              title={isAr ? "حفظ في المفضلة" : "Save to Wishlist"}
+            >
+              <Heart className={`w-5 h-5 ${isFavorite ? "fill-white" : ""}`} />
+            </button>
           </div>
         </div>
 
@@ -240,6 +259,21 @@ export function ProductDetailClient({ product, locale }: ProductDetailClientProp
                   </>
                 )}
               </button>
+
+              {/* Wishlist Button */}
+              <button
+                type="button"
+                onClick={() => toggleWishlist(product)}
+                aria-label={isAr ? "حفظ في المفضلة" : "Save to Wishlist"}
+                className={`p-3.5 rounded-2xl border transition-all flex items-center justify-center shrink-0 active:scale-90 ${
+                  isFavorite
+                    ? "bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-600 shadow-sm"
+                    : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 hover:text-rose-500 hover:border-rose-200 shadow-sm"
+                }`}
+                title={isAr ? "حفظ في المفضلة والرغبات" : "Add to Wishlist"}
+              >
+                <Heart className={`w-5 h-5 transition-transform ${isFavorite ? "fill-rose-500 text-rose-500 scale-110" : ""}`} />
+              </button>
             </div>
 
             {/* Direct WhatsApp Concierge Question */}
@@ -297,15 +331,30 @@ export function ProductDetailClient({ product, locale }: ProductDetailClientProp
           />
         </div>
 
-        <button
-          type="button"
-          onClick={handleAddToCart}
-          disabled={isOutOfStock}
-          className="flex-1 py-3 px-5 rounded-xl bg-neutral-950 dark:bg-gold-500 text-white dark:text-neutral-950 font-black text-xs flex items-center justify-center gap-2 active:scale-95 shadow-lg"
-        >
-          <ShoppingBag className="w-4 h-4" />
-          <span>{isAr ? "إضافة إلى السلة" : "Add to Cart"}</span>
-        </button>
+        <div className="flex items-center gap-2 flex-1">
+          <button
+            type="button"
+            onClick={() => toggleWishlist(product)}
+            aria-label={isAr ? "حفظ في المفضلة" : "Save to Wishlist"}
+            className={`p-3 rounded-xl border shrink-0 transition active:scale-90 ${
+              isFavorite
+                ? "bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-600"
+                : "border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300"
+            }`}
+          >
+            <Heart className={`w-4 h-4 ${isFavorite ? "fill-rose-500 text-rose-500" : ""}`} />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={isOutOfStock}
+            className="flex-1 py-3 px-5 rounded-xl bg-neutral-950 dark:bg-gold-500 text-white dark:text-neutral-950 font-black text-xs flex items-center justify-center gap-2 active:scale-95 shadow-lg"
+          >
+            <ShoppingBag className="w-4 h-4" />
+            <span>{isAr ? "إضافة إلى السلة" : "Add to Cart"}</span>
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -6,7 +6,8 @@ import { Link } from "@/i18n/routing";
 import type { ProductType, ProductVariantType } from "@/types";
 import { CurrencyBadge } from "@/components/common/CurrencyBadge";
 import { useCartStore } from "@/store/useCartStore";
-import { ShoppingBag, Eye, Sparkles, Check, Star, Zap } from "lucide-react";
+import { useWishlistStore } from "@/store/useWishlistStore";
+import { ShoppingBag, Eye, Sparkles, Check, Star, Zap, Heart, Flame } from "lucide-react";
 
 interface ProductCardProps {
   product: ProductType;
@@ -30,6 +31,8 @@ export function ProductCard({ product, locale }: ProductCardProps) {
   );
   const [isAdded, setIsAdded] = useState(false);
   const { addItem, openCart } = useCartStore();
+  const { toggleWishlist, isInWishlist } = useWishlistStore();
+  const isFavorite = isInWishlist(product.id);
 
   const currentPrice = Number(selectedVariant?.priceOverride ?? product.basePrice);
   const originalPrice = Math.round(currentPrice * 1.18); // Luxury promotional benchmark price
@@ -93,23 +96,35 @@ export function ProductCard({ product, locale }: ProductCardProps) {
           />
         </Link>
 
+        {/* Wishlist Heart Floating Button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleWishlist(product);
+          }}
+          className="absolute top-2.5 end-2.5 sm:top-3 sm:end-3 z-20 p-2 sm:p-2.5 rounded-full bg-white/90 dark:bg-neutral-900/90 text-neutral-600 dark:text-neutral-300 hover:text-red-500 shadow-md backdrop-blur-md transition-all active:scale-75"
+          title={isAr ? (isFavorite ? "إزالة من المفضلة" : "إضافة للمفضلة") : (isFavorite ? "Remove from Wishlist" : "Add to Wishlist")}
+        >
+          <Heart
+            className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-all duration-200 ${
+              isFavorite ? "fill-red-500 text-red-500 scale-110" : "hover:text-red-500"
+            }`}
+          />
+        </button>
+
         {/* Floating Badges */}
         <div className="absolute top-2.5 start-2.5 sm:top-3 sm:start-3 flex flex-col gap-1.5 pointer-events-none z-10">
-          {product.isFeatured ? (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-neutral-950/85 text-gold-300 backdrop-blur-md border border-gold-500/40 shadow-sm">
-              <Sparkles className="w-2.5 h-2.5 text-gold-400 shrink-0" />
-              <span>{isAr ? "مختارات حصرية" : "Exclusive"}</span>
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-bold bg-white/90 dark:bg-neutral-900/90 text-neutral-800 dark:text-neutral-200 backdrop-blur-md shadow-xs border border-neutral-200/60 dark:border-neutral-700/60">
-              {categoryName}
+          {product.isFeatured && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-neutral-950/85 text-amber-300 backdrop-blur-md border border-amber-500/40 shadow-sm">
+              <Flame className="w-2.5 h-2.5 text-amber-400 fill-amber-400 shrink-0" />
+              <span>{isAr ? "الأكثر طلباً 🔥" : "Best Seller"}</span>
             </span>
           )}
 
-          {/* Special savings badge */}
-          <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] font-extrabold bg-red-600 text-white shadow-xs w-fit">
-            <Zap className="w-2.5 h-2.5" />
-            <span>{isAr ? "عرض خاص" : "Special Offer"}</span>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-bold bg-white/90 dark:bg-neutral-900/90 text-neutral-800 dark:text-neutral-200 backdrop-blur-md shadow-xs border border-neutral-200/60 dark:border-neutral-700/60">
+            {categoryName}
           </span>
         </div>
 

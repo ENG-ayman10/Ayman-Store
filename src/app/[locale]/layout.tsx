@@ -7,6 +7,7 @@ import { routing } from "@/i18n/routing";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { WishlistDrawer } from "@/components/wishlist/WishlistDrawer";
 import "@/app/globals.css";
 
 const cairo = Cairo({
@@ -61,6 +62,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
           <main className="flex-1">{children}</main>
           <Footer locale={locale as "ar" | "en"} />
           <CartDrawer locale={locale as "ar" | "en"} />
+          <WishlistDrawer locale={locale as "ar" | "en"} />
         </NextIntlClientProvider>
       </body>
     </html>

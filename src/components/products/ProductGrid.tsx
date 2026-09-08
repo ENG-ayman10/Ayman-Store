@@ -35,6 +35,7 @@ export function ProductGrid({
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {
       all: products.length,
+      bestsellers: products.filter((p) => p.isFeatured).length,
       beauty: 0,
       fashion: 0,
     };
@@ -56,6 +57,11 @@ export function ProductGrid({
         count: categoryCounts.all,
       },
       {
+        id: "bestsellers",
+        name: isAr ? "الأكثر طلباً 🔥" : "Best Sellers 🔥",
+        count: categoryCounts.bestsellers,
+      },
+      {
         id: "beauty",
         name: isAr ? "مستحضرات التجميل والعناية" : "Beauty & Care",
         count: categoryCounts.beauty,
@@ -73,6 +79,7 @@ export function ProductGrid({
       // Category check
       const matchesCategory =
         selectedCategory === "all" ||
+        (selectedCategory === "bestsellers" && p.isFeatured) ||
         p.category?.slug === selectedCategory ||
         (selectedCategory === "beauty" && p.categoryId.includes("beauty")) ||
         (selectedCategory === "fashion" && p.categoryId.includes("fashion"));

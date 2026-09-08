@@ -3,10 +3,12 @@
 import React, { useState } from "react";
 import { Link } from "@/i18n/routing";
 import { useCartStore } from "@/store/useCartStore";
+import { useWishlistStore } from "@/store/useWishlistStore";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { STORE_CONFIG } from "@/config/payment";
 import {
   ShoppingBag,
+  Heart,
   Sparkles,
   Search,
   Menu,
@@ -25,6 +27,8 @@ export function Header({ locale }: HeaderProps) {
   const isAr = locale === "ar";
   const { openCart, getTotalCount } = useCartStore();
   const count = getTotalCount();
+  const { openWishlist, getTotalCount: getWishlistCount } = useWishlistStore();
+  const wishlistCount = getWishlistCount();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -113,6 +117,21 @@ export function Header({ locale }: HeaderProps) {
 
           {/* Language Switcher */}
           <LanguageSwitcher />
+
+          {/* Wishlist Trigger */}
+          <button
+            type="button"
+            onClick={openWishlist}
+            className="relative p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-900 dark:text-white transition shadow-2xs border border-neutral-200/50 dark:border-neutral-800"
+            title={isAr ? "قائمة أمنياتي المفضلة" : "My Wishlist"}
+          >
+            <Heart className={`w-4 h-4 transition-colors ${wishlistCount > 0 ? "fill-red-500 text-red-500" : "text-neutral-700 dark:text-neutral-300"}`} />
+            {wishlistCount > 0 && (
+              <span className="absolute -top-1.5 -end-1.5 min-w-5 h-5 px-1 rounded-full bg-red-600 text-white font-mono text-[10px] font-bold flex items-center justify-center shadow-xs animate-in zoom-in">
+                {wishlistCount}
+              </span>
+            )}
+          </button>
 
           {/* Cart Trigger */}
           <button
