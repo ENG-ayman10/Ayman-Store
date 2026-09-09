@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useCartStore } from "@/store/useCartStore";
 import { processOrderCheckout } from "@/actions/checkout";
 import { BankTransferCard } from "./BankTransferCard";
+import { LocationPickerMap } from "./LocationPickerMap";
 import { MessageCircle, Loader2, ShieldCheck, ShoppingBag, ArrowLeft, ArrowRight } from "lucide-react";
 import { STORE_CONFIG } from "@/config/payment";
 import { CurrencyBadge } from "@/components/common/CurrencyBadge";
@@ -20,6 +21,7 @@ export function CheckoutForm({ locale }: { locale: "ar" | "en" }) {
     address: "",
     notes: "",
   });
+  const [locationUrl, setLocationUrl] = useState<string | null>(null);
 
   const isAr = locale === "ar";
   const subtotal = getSubtotal();
@@ -40,6 +42,7 @@ export function CheckoutForm({ locale }: { locale: "ar" | "en" }) {
         city: formData.city,
         address: formData.address,
         notes: formData.notes,
+        locationUrl: locationUrl || undefined,
         locale,
         items: items.map((item) => ({
           variantId: item.variantId,
@@ -163,6 +166,12 @@ export function CheckoutForm({ locale }: { locale: "ar" | "en" }) {
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-xs text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-gold-500 shadow-2xs transition"
+            />
+
+            {/* Interactive GPS Map Picker */}
+            <LocationPickerMap
+              onLocationChange={(url) => setLocationUrl(url)}
+              locale={locale}
             />
           </div>
 

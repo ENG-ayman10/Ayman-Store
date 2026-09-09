@@ -5,7 +5,7 @@ import type { OrderType, OrderStatus } from "@/types";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { OrderRowActions } from "@/components/admin/OrderRowActions";
 import { CurrencyBadge } from "@/components/common/CurrencyBadge";
-import { Search, Package, RefreshCw, CheckCircle2 } from "lucide-react";
+import { Search, Package, RefreshCw, CheckCircle2, MapPin } from "lucide-react";
 
 interface AdminOrdersClientProps {
   initialOrders: OrderType[];
@@ -253,8 +253,25 @@ export function AdminOrdersClient({ initialOrders, locale }: AdminOrdersClientPr
                     <td className="py-3.5 px-4 font-mono text-neutral-600 dark:text-neutral-400">
                       {order.phone}
                     </td>
-                    <td className="py-3.5 px-4 text-neutral-500 max-w-xs truncate">
-                      {order.city} - {order.address}
+                    <td className="py-3.5 px-4 text-neutral-500 max-w-xs">
+                      <div className="truncate font-medium text-neutral-800 dark:text-neutral-200">
+                        {order.city} - {order.address.split("[📍")[0]}
+                      </div>
+                      {(order.locationUrl || order.address.includes("google.com/maps")) && (
+                        <a
+                          href={
+                            order.locationUrl ||
+                            order.address.match(/https:\/\/www\.google\.com\/maps[^\s\]]+/)?.[0] ||
+                            "#"
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-1 inline-flex items-center gap-1 text-[11px] font-black text-rose-600 dark:text-rose-400 hover:underline"
+                        >
+                          <MapPin className="w-3 h-3 text-rose-500" />
+                          <span>{isAr ? "موقع الخريطة (GPS) ↗" : "View Map ↗"}</span>
+                        </a>
+                      )}
                     </td>
                     <td className="py-3.5 px-4 text-neutral-500">
                       <span className="font-semibold text-neutral-800 dark:text-neutral-200">

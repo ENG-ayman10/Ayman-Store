@@ -7,6 +7,7 @@ export interface WhatsAppOrderMessagePayload {
   city: string;
   address: string;
   notes?: string;
+  locationUrl?: string;
   items: Array<{
     name: string;
     variantName: string;
@@ -37,7 +38,7 @@ export function generateWhatsAppOrderUrl(payload: WhatsAppOrderMessagePayload): 
 👤 *الاسم:* ${payload.customerName}
 📱 *رقم التواصل:* ${payload.phone}
 📍 *العنوان:* ${payload.city} - ${payload.address}
-${payload.notes ? `📝 *ملاحظات:* ${payload.notes}\n` : ""}--------------------------------------------
+${payload.locationUrl ? `🗺️ *موقع الاستلام بالخريطة (GPS):* ${payload.locationUrl}\n` : ""}${payload.notes ? `📝 *ملاحظات:* ${payload.notes}\n` : ""}--------------------------------------------
 📦 *قائمة المنتجات:*
 ${itemsList}
 
@@ -55,7 +56,7 @@ ${itemsList}
 👤 *Name:* ${payload.customerName}
 📱 *Phone:* ${payload.phone}
 📍 *Address:* ${payload.city} - ${payload.address}
-${payload.notes ? `📝 *Notes:* ${payload.notes}\n` : ""}--------------------------------------------
+${payload.locationUrl ? `🗺️ *GPS Map Location:* ${payload.locationUrl}\n` : ""}${payload.notes ? `📝 *Notes:* ${payload.notes}\n` : ""}--------------------------------------------
 📦 *Order Items:*
 ${itemsList}
 

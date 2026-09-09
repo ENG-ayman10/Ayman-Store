@@ -18,7 +18,7 @@ export async function processOrderCheckout(input: CheckoutInput) {
     };
   }
 
-  const { customerName, phone, city, address, notes, items, locale } = validated.data;
+  const { customerName, phone, city, address, notes, locationUrl, items, locale } = validated.data;
   const shippingFee = STORE_CONFIG.shippingFee;
   const generatedCode = `AYMAN-${Math.floor(100000 + Math.random() * 900000)}`;
 
@@ -150,6 +150,7 @@ export async function processOrderCheckout(input: CheckoutInput) {
       city,
       address,
       notes: notes || null,
+      locationUrl: locationUrl || null,
       subtotal,
       shippingFee,
       totalAmount,
@@ -174,7 +175,7 @@ export async function processOrderCheckout(input: CheckoutInput) {
           customerName,
           phone,
           city,
-          address,
+          address: locationUrl ? `${address} [📍 موقع الخريطة: ${locationUrl}]` : address,
           notes: notes || null,
           subtotal,
           shippingFee,
@@ -244,6 +245,7 @@ export async function processOrderCheckout(input: CheckoutInput) {
       city,
       address,
       notes: notes || undefined,
+      locationUrl: locationUrl || undefined,
       items: orderItemsData.map((item) => ({
         name: locale === "ar" ? item.nameAr : item.nameEn,
         variantName: locale === "ar" ? item.variantAr : item.variantEn,

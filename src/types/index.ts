@@ -82,6 +82,7 @@ export interface OrderType {
   city: string;
   address: string;
   notes: string | null;
+  locationUrl?: string | null;
   subtotal: number;
   shippingFee: number;
   totalAmount: number;

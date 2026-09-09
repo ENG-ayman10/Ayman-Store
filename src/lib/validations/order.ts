@@ -11,6 +11,7 @@ export const CheckoutSchema = z.object({
   city: z.string().min(2, "City is required"),
   address: z.string().min(3, "Detailed address is required"),
   notes: z.string().optional(),
+  locationUrl: z.string().optional(),
   locale: z.enum(["ar", "en"]).default("ar"),
   items: z.array(CheckoutItemSchema).min(1, "At least one item is required in cart"),
 });
