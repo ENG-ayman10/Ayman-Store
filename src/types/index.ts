@@ -71,6 +71,7 @@ export interface OrderItemType {
   unitPrice: number;
   quantity: number;
   itemTotal: number;
+  image?: string;
 }
 
 export interface OrderType {

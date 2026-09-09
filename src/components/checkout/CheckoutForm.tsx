@@ -1,20 +1,35 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useCartStore } from "@/store/useCartStore";
+import { useCustomerOrdersStore } from "@/store/useCustomerOrdersStore";
 import { processOrderCheckout } from "@/actions/checkout";
 import { BankTransferCard } from "./BankTransferCard";
 import { LocationPickerMap } from "./LocationPickerMap";
-import { MessageCircle, Loader2, ShieldCheck, ShoppingBag, ArrowLeft, ArrowRight, ChevronDown } from "lucide-react";
+import {
+  MessageCircle,
+  Loader2,
+  ShieldCheck,
+  ShoppingBag,
+  ArrowLeft,
+  ArrowRight,
+  ChevronDown,
+  Sparkles,
+  X,
+  Plus,
+  Minus,
+} from "lucide-react";
 import { YEMEN_GOVERNORATES } from "@/config/yemenGovernorates";
 import { STORE_CONFIG } from "@/config/payment";
 import { CurrencyBadge } from "@/components/common/CurrencyBadge";
 import { Link } from "@/i18n/routing";
 
 export function CheckoutForm({ locale }: { locale: "ar" | "en" }) {
-  const { items, getSubtotal, clearCart } = useCartStore();
+  const { items, getSubtotal, clearCart, updateQuantity, removeItem } = useCartStore();
+  const { addOrderCode } = useCustomerOrdersStore();
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [reorderBanner, setReorderBanner] = useState<{ fromOrderCode?: string } | null>(null);
   const [formData, setFormData] = useState({
     customerName: "",
     phone: "",
@@ -24,6 +39,55 @@ export function CheckoutForm({ locale }: { locale: "ar" | "en" }) {
   });
   const [locationUrl, setLocationUrl] = useState<string | null>(null);
   const [selectedGovCoords, setSelectedGovCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Load prefill details if coming from re-order
+  useEffect(() => {
+    try {
+      const prefillRaw = localStorage.getItem("ayman-store-reorder-prefill");
+      if (prefillRaw) {
+        const parsed = JSON.parse(prefillRaw);
+        if (parsed) {
+          setFormData({
+            customerName: parsed.customerName || "",
+            phone: parsed.phone || "",
+            city: parsed.city || "",
+            address: parsed.address || "",
+            notes: parsed.notes || "",
+          });
+          if (parsed.locationUrl) {
+            setLocationUrl(parsed.locationUrl);
+          }
+          if (parsed.city) {
+            const found = YEMEN_GOVERNORATES.find(
+              (g) => g.nameAr === parsed.city || g.nameEn === parsed.city
+            );
+            if (found) {
+              setSelectedGovCoords({ lat: found.lat, lng: found.lng });
+            }
+          }
+          setReorderBanner({ fromOrderCode: parsed.fromOrderCode });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to parse reorder prefill", err);
+    }
+  }, []);
+
+  const handleClearReorderPrefill = () => {
+    try {
+      localStorage.removeItem("ayman-store-reorder-prefill");
+    } catch {}
+    setReorderBanner(null);
+    setFormData({
+      customerName: "",
+      phone: "",
+      city: "",
+      address: "",
+      notes: "",
+    });
+    setLocationUrl(null);
+    setSelectedGovCoords(null);
+  };
 
   const handleGovernorateChange = (govName: string) => {
     setFormData((prev) => ({ ...prev, city: govName }));
@@ -63,6 +127,12 @@ export function CheckoutForm({ locale }: { locale: "ar" | "en" }) {
       });
 
       if (res.success && res.whatsappUrl) {
+        if (res.orderCode) {
+          addOrderCode(res.orderCode);
+        }
+        try {
+          localStorage.removeItem("ayman-store-reorder-prefill");
+        } catch {}
         clearCart();
         // Redirect to WhatsApp URL
         window.location.href = res.whatsappUrl;
@@ -107,6 +177,52 @@ export function CheckoutForm({ locale }: { locale: "ar" | "en" }) {
       {/* Form Details */}
       <div className="md:col-span-7 space-y-6">
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Re-order Alert Banner */}
+          {reorderBanner && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-gold-500/15 via-gold-500/10 to-amber-500/5 border border-gold-500/30 text-neutral-900 dark:text-neutral-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-gold-500 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-bold text-neutral-900 dark:text-white">
+                      {isAr ? "تم استرجاع تفاصيل طلبك السابق بنجاح!" : "Past order details loaded!"}
+                    </h4>
+                    {reorderBanner.fromOrderCode && (
+                      <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-gold-200/80 dark:bg-gold-950 text-gold-900 dark:text-gold-200">
+                        {reorderBanner.fromOrderCode}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-neutral-600 dark:text-neutral-300 mt-0.5 leading-relaxed">
+                    {isAr
+                      ? "يمكنك الآن تعديل العنوان أو رقم الهاتف أو الكميات من ملخص الطلب بحرية تامة قبل التأكيد."
+                      : "You can customize your delivery address, phone, or quantities freely before checkout."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                <button
+                  type="button"
+                  onClick={handleClearReorderPrefill}
+                  className="px-3 py-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white/80 dark:bg-neutral-800 text-[11px] font-bold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition shadow-2xs"
+                >
+                  {isAr ? "تفريغ الحقول والبدء من جديد" : "Clear & Start Fresh"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReorderBanner(null)}
+                  className="p-1.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition"
+                  title={isAr ? "إخفاء التنبيه" : "Dismiss"}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="border-b border-neutral-200 dark:border-neutral-800 pb-3">
             <h2 className="text-lg font-bold text-neutral-900 dark:text-white">
               {isAr ? "بيانات استلام الطلب والشحن" : "Delivery & Shipping Details"}
@@ -251,20 +367,42 @@ export function CheckoutForm({ locale }: { locale: "ar" | "en" }) {
 
           <div className="divide-y divide-neutral-200/80 dark:border-neutral-800 max-h-72 overflow-y-auto space-y-2 pe-1">
             {items.map((item) => (
-              <div key={item.variantId} className="pt-2 flex items-center justify-between text-xs">
-                <div className="pe-2">
-                  <p className="font-bold text-neutral-800 dark:text-neutral-200 line-clamp-1">
+              <div key={item.variantId} className="py-2 flex items-center justify-between text-xs gap-2">
+                <div className="pe-1 min-w-0 flex-1">
+                  <p className="font-bold text-neutral-800 dark:text-neutral-200 truncate text-[11px]">
                     {isAr ? item.nameAr : item.nameEn}
                   </p>
-                  <p className="text-[11px] text-neutral-500">
-                    {isAr ? item.variantAr : item.variantEn} × {item.quantity}
+                  <p className="text-[10px] text-neutral-400">
+                    {isAr ? item.variantAr : item.variantEn}
                   </p>
                 </div>
+
+                {/* Quick Quantity Control in Checkout */}
+                <div className="flex items-center gap-1 shrink-0 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-1 py-0.5 rounded-lg shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+                    className="w-5 h-5 rounded flex items-center justify-center text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-700 transition"
+                    title={isAr ? "إنقاص الكمية" : "Decrease quantity"}
+                  >
+                    <Minus className="w-2.5 h-2.5" />
+                  </button>
+                  <span className="w-4 text-center font-bold text-xs font-mono">{item.quantity}</span>
+                  <button
+                    type="button"
+                    onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                    className="w-5 h-5 rounded flex items-center justify-center text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-700 transition"
+                    title={isAr ? "زيادة الكمية" : "Increase quantity"}
+                  >
+                    <Plus className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+
                 <CurrencyBadge
                   amount={item.price * item.quantity}
                   locale={locale}
                   size="sm"
-                  className="text-neutral-900 dark:text-white shrink-0"
+                  className="text-neutral-900 dark:text-white shrink-0 font-bold"
                 />
               </div>
             ))}

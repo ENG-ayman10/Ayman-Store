@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "@/i18n/routing";
 import { trackOrder } from "@/actions/orders";
+import { useCustomerOrdersStore } from "@/store/useCustomerOrdersStore";
 import type { OrderType, OrderStatus } from "@/types";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { CurrencyBadge } from "@/components/common/CurrencyBadge";
@@ -19,6 +21,9 @@ import {
   Truck,
   CheckCheck,
   AlertCircle,
+  RotateCcw,
+  BookmarkPlus,
+  BookmarkCheck,
 } from "lucide-react";
 
 interface TrackOrderClientProps {
@@ -26,11 +31,28 @@ interface TrackOrderClientProps {
 }
 
 export function TrackOrderClient({ locale }: TrackOrderClientProps) {
+  const router = useRouter();
   const isAr = locale === "ar";
+  const { savedOrderCodes, addOrderCode, reorder } = useCustomerOrdersStore();
+
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [order, setOrder] = useState<OrderType | null>(null);
+  const [reordering, setReordering] = useState(false);
+
+  const isSaved = order ? savedOrderCodes.includes(order.orderCode.toUpperCase()) : false;
+
+  const handleReorder = () => {
+    if (!order) return;
+    setReordering(true);
+    setTimeout(() => {
+      reorder(order, () => {
+        router.push("/checkout");
+      });
+      setReordering(false);
+    }, 250);
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -273,6 +295,56 @@ export function TrackOrderClient({ locale }: TrackOrderClientProps) {
                   <CurrencyBadge amount={item.itemTotal} locale={locale} size="sm" />
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Quick Re-Order & Save Section */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-gold-500/10 via-gold-500/5 to-transparent border border-gold-500/25 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="text-center sm:text-start">
+              <span className="text-xs font-bold text-neutral-900 dark:text-white block">
+                {isAr ? "هل أعجبك هذا الطلب وتريد تكراره؟" : "Loved this order and want to repeat it?"}
+              </span>
+              <span className="text-[11px] text-neutral-500 block">
+                {isAr
+                  ? "كرري الطلب بضغطة واحدة مع إمكانية تعديل الكميات، المنتجات، أو العنوان بالكامل."
+                  : "Re-order in 1-click with full ability to modify quantities, items, or address."}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+              {!isSaved && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    addOrderCode(order.orderCode);
+                  }}
+                  className="flex-1 sm:flex-initial py-2.5 px-3.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-2xs"
+                  title={isAr ? "حفظ هذا الطلب في سجلي" : "Save to my orders"}
+                >
+                  <BookmarkPlus className="w-4 h-4 text-gold-600" />
+                  <span>{isAr ? "حفظ في طلباتي" : "Save Order"}</span>
+                </button>
+              )}
+              {isSaved && (
+                <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-bold px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                  <BookmarkCheck className="w-3.5 h-3.5" />
+                  <span>{isAr ? "محفوظ في طلباتك" : "Saved"}</span>
+                </div>
+              )}
+
+              <button
+                type="button"
+                disabled={reordering}
+                onClick={handleReorder}
+                className="flex-1 sm:flex-initial py-2.5 px-4 rounded-xl bg-gold-600 hover:bg-gold-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-gold-600/20 transition disabled:opacity-50"
+              >
+                {reordering ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-4 h-4" />
+                )}
+                <span>{isAr ? "تكرار وتعديل الطلب 🔁" : "Re-order & Customize 🔁"}</span>
+              </button>
             </div>
           </div>
 

@@ -9,6 +9,7 @@ import { Footer } from "@/components/common/Footer";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { WishlistDrawer } from "@/components/wishlist/WishlistDrawer";
 import { MobileMenuDrawer } from "@/components/common/MobileMenuDrawer";
+import { CustomerOrdersDrawer } from "@/components/orders/CustomerOrdersDrawer";
 import "@/app/globals.css";
 
 const cairo = Cairo({
@@ -64,6 +65,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
           <Footer locale={locale as "ar" | "en"} />
           <CartDrawer locale={locale as "ar" | "en"} />
           <WishlistDrawer locale={locale as "ar" | "en"} />
+          <CustomerOrdersDrawer locale={locale as "ar" | "en"} />
           <MobileMenuDrawer locale={locale as "ar" | "en"} />
         </NextIntlClientProvider>
       </body>

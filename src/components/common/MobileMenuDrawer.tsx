@@ -5,6 +5,7 @@ import { Link } from "@/i18n/routing";
 import { useMobileMenuStore } from "@/store/useMobileMenuStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
 import { useCartStore } from "@/store/useCartStore";
+import { useCustomerOrdersStore } from "@/store/useCustomerOrdersStore";
 import { STORE_CONFIG } from "@/config/payment";
 import {
   X,
@@ -19,6 +20,7 @@ import {
   ShieldCheck,
   ChevronRight,
   ChevronLeft,
+  RotateCcw,
 } from "lucide-react";
 
 interface MobileMenuDrawerProps {
@@ -29,10 +31,12 @@ export function MobileMenuDrawer({ locale }: MobileMenuDrawerProps) {
   const { isOpen, closeMenu } = useMobileMenuStore();
   const { openWishlist, getTotalCount: getWishlistCount } = useWishlistStore();
   const { openCart, getTotalCount: getCartCount } = useCartStore();
+  const { openOrders, savedOrderCodes } = useCustomerOrdersStore();
 
   const isAr = locale === "ar";
   const wishlistCount = getWishlistCount();
   const cartCount = getCartCount();
+  const ordersCount = savedOrderCodes.length;
 
   // Close on Escape key and prevent background scroll
   useEffect(() => {
@@ -243,6 +247,32 @@ export function MobileMenuDrawer({ locale }: MobileMenuDrawerProps) {
                 {isAr ? "مباشر ⚡" : "Live ⚡"}
               </span>
             </Link>
+
+            {/* Previous Orders & Re-order */}
+            <button
+              type="button"
+              onClick={() => {
+                closeMenu();
+                openOrders();
+              }}
+              className="w-full flex items-center justify-between p-3 rounded-2xl hover:bg-gold-50/60 dark:hover:bg-gold-950/30 text-neutral-800 dark:text-neutral-200 font-bold text-xs transition group text-start active:scale-98"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-gold-50 dark:bg-gold-950/50 flex items-center justify-center text-gold-600 dark:text-gold-400 group-hover:bg-gold-500 group-hover:text-white transition-colors">
+                  <RotateCcw className="w-4 h-4" />
+                </div>
+                <span>{isAr ? "طلباتي السابقة وتكرار الطلب" : "My Orders & Re-order"}</span>
+              </div>
+              {ordersCount > 0 ? (
+                <span className="text-[10px] font-bold bg-gold-600 text-white px-2 py-0.5 rounded-full font-mono shadow-xs">
+                  {ordersCount}
+                </span>
+              ) : (
+                <span className="text-[10px] text-neutral-400 font-semibold">
+                  {isAr ? "السجل" : "History"}
+                </span>
+              )}
+            </button>
 
             {/* Admin Dashboard */}
             <Link

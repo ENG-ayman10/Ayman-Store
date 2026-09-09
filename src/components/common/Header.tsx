@@ -4,6 +4,7 @@ import React from "react";
 import { Link } from "@/i18n/routing";
 import { useCartStore } from "@/store/useCartStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
+import { useCustomerOrdersStore } from "@/store/useCustomerOrdersStore";
 import { useMobileMenuStore } from "@/store/useMobileMenuStore";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { STORE_CONFIG } from "@/config/payment";
@@ -15,6 +16,7 @@ import {
   MessageCircle,
   Truck,
   Sliders,
+  RotateCcw,
 } from "lucide-react";
 
 interface HeaderProps {
@@ -27,6 +29,8 @@ export function Header({ locale }: HeaderProps) {
   const count = getTotalCount();
   const { openWishlist, getTotalCount: getWishlistCount } = useWishlistStore();
   const wishlistCount = getWishlistCount();
+  const { openOrders, savedOrderCodes } = useCustomerOrdersStore();
+  const ordersCount = savedOrderCodes.length;
   const { openMenu } = useMobileMenuStore();
 
   return (
@@ -86,6 +90,20 @@ export function Header({ locale }: HeaderProps) {
               <Truck className="w-3.5 h-3.5" />
               <span>{isAr ? "تتبع طلبك" : "Track Order"}</span>
             </Link>
+            <button
+              type="button"
+              onClick={openOrders}
+              className="px-3 py-1.5 rounded-lg hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition flex items-center gap-1.5 text-neutral-600 dark:text-neutral-300"
+              title={isAr ? "طلباتي السابقة وتكرار الطلب" : "My Orders & Re-order"}
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-gold-600 dark:text-gold-400" />
+              <span>{isAr ? "طلباتي السابقة" : "My Orders"}</span>
+              {ordersCount > 0 && (
+                <span className="min-w-4 h-4 px-1 rounded-full bg-gold-500 text-white font-mono text-[9px] font-bold flex items-center justify-center">
+                  {ordersCount}
+                </span>
+              )}
+            </button>
           </nav>
         </div>
 
@@ -115,6 +133,21 @@ export function Header({ locale }: HeaderProps) {
 
           {/* Language Switcher */}
           <LanguageSwitcher />
+
+          {/* Previous Orders Trigger (Action Icon) */}
+          <button
+            type="button"
+            onClick={openOrders}
+            className="relative p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-900 dark:text-white transition shadow-2xs border border-neutral-200/50 dark:border-neutral-800"
+            title={isAr ? "طلباتي السابقة وتكرار الطلب" : "My Orders & Re-order"}
+          >
+            <RotateCcw className="w-4 h-4 text-neutral-700 dark:text-neutral-300" />
+            {ordersCount > 0 && (
+              <span className="absolute -top-1.5 -end-1.5 min-w-5 h-5 px-1 rounded-full bg-gold-600 text-white font-mono text-[10px] font-bold flex items-center justify-center shadow-xs animate-in zoom-in">
+                {ordersCount}
+              </span>
+            )}
+          </button>
 
           {/* Wishlist Trigger */}
           <button

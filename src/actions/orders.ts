@@ -22,6 +22,7 @@ function mapPrismaOrderToOrderType(dbOrder: any): OrderType {
     city: dbOrder.city,
     address: dbOrder.address,
     notes: dbOrder.notes,
+    locationUrl: dbOrder.locationUrl || null,
     subtotal: Number(dbOrder.subtotal),
     shippingFee: Number(dbOrder.shippingFee),
     totalAmount: Number(dbOrder.totalAmount),
@@ -39,6 +40,7 @@ function mapPrismaOrderToOrderType(dbOrder: any): OrderType {
       unitPrice: Number(i.unitPrice),
       quantity: i.quantity,
       itemTotal: Number(i.itemTotal),
+      image: i.product?.images?.[0] || i.image || undefined,
     })),
     createdAt: typeof dbOrder.createdAt === "string" ? dbOrder.createdAt : dbOrder.createdAt?.toISOString() || new Date().toISOString(),
     updatedAt: typeof dbOrder.updatedAt === "string" ? dbOrder.updatedAt : dbOrder.updatedAt?.toISOString() || new Date().toISOString(),
@@ -59,7 +61,13 @@ export async function trackOrder(query: string): Promise<OrderType | null> {
         ],
       },
       include: {
-        items: true,
+        items: {
+          include: {
+            product: {
+              select: { images: true },
+            },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -78,6 +86,64 @@ export async function trackOrder(query: string): Promise<OrderType | null> {
   }
 
   return null;
+}
+
+export async function getCustomerOrders(
+  orderCodes: string[],
+  phone?: string
+): Promise<OrderType[]> {
+  const codes = (orderCodes || []).map((c) => c.trim().toUpperCase()).filter(Boolean);
+  const cleanPhone = phone?.trim() || "";
+
+  if (codes.length === 0 && (!cleanPhone || cleanPhone.length < 5)) {
+    return [];
+  }
+
+  const orConditions: any[] = [];
+  if (codes.length > 0) {
+    orConditions.push({ orderCode: { in: codes } });
+  }
+  if (cleanPhone && cleanPhone.length >= 5) {
+    orConditions.push({ phone: { contains: cleanPhone } });
+  }
+
+  // 1. Primary: Prisma PostgreSQL
+  try {
+    const dbOrders = await prisma.order.findMany({
+      where: { OR: orConditions },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: { images: true },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (dbOrders && dbOrders.length > 0) {
+      return dbOrders.map(mapPrismaOrderToOrderType);
+    }
+  } catch (error) {
+    console.warn("Prisma getCustomerOrders error, falling back to disk:", error);
+  }
+
+  // 2. Fallback: Disk storage
+  const diskOrders = await readOrdersFromDisk();
+  const matched = diskOrders.filter((o) => {
+    const codeMatch = codes.includes(o.orderCode.toUpperCase());
+    const phoneMatch =
+      cleanPhone && cleanPhone.length >= 5 && o.phone.includes(cleanPhone);
+    return codeMatch || phoneMatch;
+  });
+
+  matched.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+  return matched;
 }
 
 export async function getAdminOrders(filterStatus?: OrderStatus | "ALL"): Promise<OrderType[]> {
