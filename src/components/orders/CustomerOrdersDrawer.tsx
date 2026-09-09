@@ -7,6 +7,7 @@ import { useCustomerOrdersStore } from "@/store/useCustomerOrdersStore";
 import { getCustomerOrders } from "@/actions/orders";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { CurrencyBadge } from "@/components/common/CurrencyBadge";
+import { formatFullDateTime } from "@/lib/utils";
 import type { OrderType } from "@/types";
 import {
   X,
@@ -286,14 +287,7 @@ export function CustomerOrdersDrawer({ locale }: CustomerOrdersDrawerProps) {
             ) : (
               orders.map((order) => {
                 const isReordering = reorderingId === order.id;
-                const formattedDate = new Date(order.createdAt).toLocaleDateString(
-                  isAr ? "ar-YE" : "en-US",
-                  {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  }
-                );
+                const timeInfo = formatFullDateTime(order.createdAt, locale);
 
                 // Clean address if it had GPS tag
                 const mapRegex = /\[📍 موقع الخريطة:\s*(https?:\/\/[^\s\]]+)\]/;
@@ -328,9 +322,16 @@ export function CustomerOrdersDrawer({ locale }: CustomerOrdersDrawerProps) {
                             )}
                           </button>
                         </div>
-                        <div className="flex items-center gap-1.5 text-[10px] text-neutral-400 mt-0.5">
-                          <Calendar className="w-3 h-3" />
-                          <span>{formattedDate}</span>
+                        <div className="flex flex-wrap items-center gap-2 text-[10px] text-neutral-500 dark:text-neutral-400 mt-1">
+                          <span className="flex items-center gap-1 font-medium">
+                            <Calendar className="w-3 h-3 text-gold-500" />
+                            <span>{timeInfo.dateStr}</span>
+                          </span>
+                          <span className="text-neutral-300 dark:text-neutral-700">•</span>
+                          <span className="flex items-center gap-1 font-mono font-bold text-neutral-700 dark:text-neutral-300">
+                            <Clock className="w-3 h-3 text-gold-500" />
+                            <span>{timeInfo.timeStr}</span>
+                          </span>
                         </div>
                       </div>
 

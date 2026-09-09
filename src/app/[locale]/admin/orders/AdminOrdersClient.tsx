@@ -5,7 +5,8 @@ import type { OrderType, OrderStatus } from "@/types";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { OrderRowActions } from "@/components/admin/OrderRowActions";
 import { CurrencyBadge } from "@/components/common/CurrencyBadge";
-import { Search, Package, RefreshCw, CheckCircle2, MapPin } from "lucide-react";
+import { Search, Package, RefreshCw, CheckCircle2, MapPin, Clock } from "lucide-react";
+import { formatFullDateTime } from "@/lib/utils";
 
 interface AdminOrdersClientProps {
   initialOrders: OrderType[];
@@ -244,8 +245,14 @@ export function AdminOrdersClient({ initialOrders, locale }: AdminOrdersClientPr
                     key={order.id}
                     className="hover:bg-neutral-50/80 dark:hover:bg-neutral-800/40 transition"
                   >
-                    <td className="py-3.5 px-4 font-mono font-bold text-neutral-900 dark:text-white">
-                      {order.orderCode}
+                    <td className="py-3.5 px-4">
+                      <div className="font-mono font-bold text-neutral-900 dark:text-white">
+                        {order.orderCode}
+                      </div>
+                      <div className="text-[10px] text-neutral-400 font-mono flex items-center gap-1 mt-0.5 whitespace-nowrap">
+                        <Clock className="w-2.5 h-2.5 text-gold-500 shrink-0" />
+                        <span>{formatFullDateTime(order.createdAt, locale).fullStr}</span>
+                      </div>
                     </td>
                     <td className="py-3.5 px-4 font-bold text-neutral-800 dark:text-neutral-200">
                       {order.customerName}

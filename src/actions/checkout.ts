@@ -240,6 +240,7 @@ export async function processOrderCheckout(input: CheckoutInput) {
     // 5. Generate WhatsApp notification link
     const whatsappRedirectUrl = generateWhatsAppOrderUrl({
       orderCode: generatedCode,
+      createdAt: orderRecord.createdAt,
       customerName,
       phone,
       city,

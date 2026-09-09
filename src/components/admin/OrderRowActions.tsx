@@ -3,8 +3,9 @@
 import React, { useState, useTransition } from "react";
 import type { OrderType, OrderStatus } from "@/types";
 import { updateOrderStatus, deleteOrder } from "@/actions/orders";
-import { MessageCircle, Loader2, Eye, X, Trash2, AlertCircle } from "lucide-react";
+import { MessageCircle, Loader2, Eye, X, Trash2, AlertCircle, Clock } from "lucide-react";
 import { CurrencyBadge } from "@/components/common/CurrencyBadge";
+import { formatFullDateTime } from "@/lib/utils";
 
 interface OrderRowActionsProps {
   order: OrderType;
@@ -157,8 +158,9 @@ export function OrderRowActions({ order, locale, onStatusChange, onDelete }: Ord
                 <h3 className="font-bold text-sm text-neutral-900 dark:text-white">
                   {isAr ? `تفاصيل الطلب: ${order.orderCode}` : `Order Details: ${order.orderCode}`}
                 </h3>
-                <p className="text-[11px] text-neutral-500">
-                  {new Date(order.createdAt).toLocaleString(isAr ? "ar-YE" : "en-US")}
+                <p className="text-[11px] text-neutral-500 font-mono flex items-center gap-1.5 mt-0.5">
+                  <Clock className="w-3 h-3 text-gold-500 shrink-0" />
+                  <span>{formatFullDateTime(order.createdAt, locale).fullStr}</span>
                 </p>
               </div>
               <button

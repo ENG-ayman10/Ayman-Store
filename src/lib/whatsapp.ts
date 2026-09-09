@@ -1,7 +1,9 @@
 import { STORE_CONFIG } from "@/config/payment";
+import { formatFullDateTime } from "@/lib/utils";
 
 export interface WhatsAppOrderMessagePayload {
   orderCode: string;
+  createdAt?: string | Date;
   customerName: string;
   phone: string;
   city: string;
@@ -23,6 +25,7 @@ export interface WhatsAppOrderMessagePayload {
 export function generateWhatsAppOrderUrl(payload: WhatsAppOrderMessagePayload): string {
   const isAr = payload.locale === "ar";
   const currency = isAr ? STORE_CONFIG.currency.ar : STORE_CONFIG.currency.en;
+  const orderTimeInfo = formatFullDateTime(payload.createdAt || new Date(), payload.locale);
 
   const itemsList = payload.items
     .map(
@@ -33,6 +36,7 @@ export function generateWhatsAppOrderUrl(payload: WhatsAppOrderMessagePayload): 
 
   const message = isAr
     ? `🛍️ *طلب جديد: ${payload.orderCode}*
+📅 *تاريخ وتوقيت الطلب:* ${orderTimeInfo.fullStr}
 --------------------------------------------
 *بيانات العميل:*
 👤 *الاسم:* ${payload.customerName}
@@ -51,6 +55,7 @@ ${itemsList}
 --------------------------------------------
 📎 *مرفق لكم إشعار التحويل لتأكيد الطلب وبدء الشحن.*`
     : `🛍️ *New Order: ${payload.orderCode}*
+📅 *Order Date & Time:* ${orderTimeInfo.fullStr}
 --------------------------------------------
 *Customer Information:*
 👤 *Name:* ${payload.customerName}

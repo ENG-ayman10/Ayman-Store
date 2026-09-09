@@ -8,6 +8,7 @@ import type { OrderType, OrderStatus } from "@/types";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { CurrencyBadge } from "@/components/common/CurrencyBadge";
 import { STORE_CONFIG } from "@/config/payment";
+import { formatFullDateTime } from "@/lib/utils";
 import {
   Search,
   Loader2,
@@ -183,14 +184,15 @@ export function TrackOrderClient({ locale }: TrackOrderClientProps) {
                 </span>
                 <StatusBadge status={order.status} locale={locale} />
               </div>
-              <div className="flex items-center gap-2 text-xs text-neutral-400 mt-1">
-                <Calendar className="w-3.5 h-3.5" />
-                <span>
-                  {new Date(order.createdAt).toLocaleDateString(isAr ? "ar-YE" : "en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
+              <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400 mt-1.5">
+                <span className="flex items-center gap-1 font-medium">
+                  <Calendar className="w-3.5 h-3.5 text-gold-500" />
+                  <span>{formatFullDateTime(order.createdAt, locale).dateStr}</span>
+                </span>
+                <span className="text-neutral-300 dark:text-neutral-700">•</span>
+                <span className="flex items-center gap-1 font-mono font-bold text-neutral-700 dark:text-neutral-300">
+                  <Clock className="w-3.5 h-3.5 text-gold-500" />
+                  <span>{formatFullDateTime(order.createdAt, locale).timeStr}</span>
                 </span>
               </div>
             </div>
