@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
-import type { ProductType, ProductVariantType } from "@/types";
+import type { ProductType, ProductVariantType, ReviewType } from "@/types";
 import { VariantSelector } from "@/components/products/VariantSelector";
 import { CurrencyBadge } from "@/components/common/CurrencyBadge";
 import { useCartStore } from "@/store/useCartStore";
@@ -24,14 +24,20 @@ import {
   ArrowRight,
   ArrowLeft,
   Heart,
+  UserCheck,
 } from "lucide-react";
 
 interface ProductDetailClientProps {
   product: ProductType;
+  initialReviews?: ReviewType[];
   locale: "ar" | "en";
 }
 
-export function ProductDetailClient({ product, locale }: ProductDetailClientProps) {
+export function ProductDetailClient({
+  product,
+  initialReviews = [],
+  locale,
+}: ProductDetailClientProps) {
   const isAr = locale === "ar";
   const [selectedVariant, setSelectedVariant] = useState<ProductVariantType>(
     product.variants[0] || null
@@ -47,6 +53,12 @@ export function ProductDetailClient({ product, locale }: ProductDetailClientProp
   const originalPrice = Math.round(currentPrice * 1.18);
   const maxStock = selectedVariant?.stockQuantity ?? 15;
   const isOutOfStock = maxStock <= 0;
+
+  const reviews = initialReviews || [];
+  const hasReviews = reviews.length > 0;
+  const avgRating = hasReviews
+    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+    : null;
 
   const handleAddToCart = () => {
     if (!selectedVariant || isOutOfStock) return;
@@ -160,11 +172,20 @@ export function ProductDetailClient({ product, locale }: ProductDetailClientProp
                     : "Luxury Essentials"}
               </span>
 
-              <div className="flex items-center gap-1 text-amber-500 text-xs font-bold">
-                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                <span>4.9</span>
-                <span className="text-neutral-400 text-[11px]">(48 تقييم معتمد)</span>
-              </div>
+              {hasReviews ? (
+                <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 text-xs font-bold bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800/60">
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                  <span>{avgRating}</span>
+                  <span className="text-neutral-500 text-[11px]">
+                    ({reviews.length} {isAr ? "تقييم مشتريات موثّق" : "verified reviews"})
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 text-gold-600 dark:text-gold-400 text-xs font-bold bg-gold-50 dark:bg-gold-950/40 px-2.5 py-1 rounded-full border border-gold-200 dark:border-gold-800/50">
+                  <ShieldCheck className="w-3.5 h-3.5 text-gold-500" />
+                  <span>{isAr ? "أصلي 100% • تقييمات موثقة بعد الشراء" : "100% Authentic • Verified Buyers"}</span>
+                </div>
+              )}
             </div>
 
             {/* Product Title */}
@@ -315,6 +336,126 @@ export function ProductDetailClient({ product, locale }: ProductDetailClientProp
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Real Customer Reviews Section */}
+      <div className="mt-12 pt-8 border-t border-neutral-200 dark:border-neutral-800 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-gold-600 dark:text-gold-400 uppercase tracking-widest">
+                {isAr ? "شفافية ومصداقية تامة" : "100% Transparent Reviews"}
+              </span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white flex items-center gap-2 mt-1">
+              <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
+              <span>{isAr ? "تقييمات وآراء العميلات بعد الطلب" : "Customer Reviews & Experiences"}</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+              {isAr
+                ? "تقييمات حقيقية من مشتريات مؤكدة تم تسليمها في مختلف محافظات اليمن."
+                : "Real verified feedback from actual delivered orders across Yemen."}
+            </p>
+          </div>
+
+          {hasReviews && (
+            <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 shrink-0">
+              <div className="text-3xl font-black text-amber-600 dark:text-amber-400 font-mono">
+                {avgRating}
+              </div>
+              <div className="text-start">
+                <div className="flex items-center gap-0.5">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star
+                      key={s}
+                      className={`w-3.5 h-3.5 ${
+                        s <= Math.round(Number(avgRating))
+                          ? "fill-amber-400 text-amber-400"
+                          : "text-neutral-300 dark:text-neutral-700"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <div className="text-[11px] text-neutral-500 mt-0.5">
+                  {reviews.length} {isAr ? "تقييم عملاء موثق" : "verified reviews"}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {hasReviews ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {reviews.map((rev) => (
+              <div
+                key={rev.id}
+                className="p-5 rounded-2xl bg-neutral-50/90 dark:bg-neutral-900/90 border border-neutral-200/80 dark:border-neutral-800/80 space-y-3 shadow-2xs"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                      {rev.customerName.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                        <span>{rev.customerName}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 font-medium">
+                          {isAr ? "مشتري موثّق ✓" : "Verified Buyer ✓"}
+                        </span>
+                      </div>
+                      {rev.city && (
+                        <span className="text-[10px] text-neutral-400 block mt-0.5">
+                          {rev.city}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        className={`w-3.5 h-3.5 ${
+                          s <= rev.rating
+                            ? "fill-amber-400 text-amber-400"
+                            : "text-neutral-300 dark:text-neutral-700"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {rev.comment && (
+                  <p className="text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed bg-white dark:bg-neutral-950/60 p-3.5 rounded-xl border border-neutral-100 dark:border-neutral-800/80">
+                    "{rev.comment}"
+                  </p>
+                )}
+
+                <div className="text-[10px] text-neutral-400 text-left">
+                  {new Date(rev.createdAt).toLocaleDateString(isAr ? "ar-YE" : "en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center p-8 rounded-3xl bg-neutral-50/60 dark:bg-neutral-900/40 border border-dashed border-neutral-200 dark:border-neutral-800 space-y-3">
+            <div className="w-12 h-12 rounded-full bg-gold-100 dark:bg-gold-950/60 text-gold-600 dark:text-gold-400 mx-auto flex items-center justify-center">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
+              {isAr ? "لا توجد تقييمات لهذا المنتج بعد" : "No reviews for this product yet"}
+            </h3>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-md mx-auto leading-relaxed">
+              {isAr
+                ? "نحن نعتمد نظام تقييمات حقيقية 100% يظهر فقط بعد استلام العميل لطلبه. عند طلبك لهذا المنتج، سيظهر لك خيار إضافة رأيك وتقييمك مباشرة ليظهر هنا."
+                : "We exclusively show genuine reviews submitted after real purchases. When you order this product, you'll be able to leave your verified feedback!"}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Mobile Sticky Bottom Floating Purchase Bar (Always Visible on Mobile) */}

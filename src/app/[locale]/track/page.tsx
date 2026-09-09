@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { TrackOrderClient } from "./TrackOrderClient";
 import type { Metadata } from "next";
 
@@ -31,7 +31,9 @@ export default async function TrackPage({ params }: TrackPageProps) {
         </p>
       </div>
 
-      <TrackOrderClient locale={locale as "ar" | "en"} />
+      <Suspense fallback={<div className="text-center py-12 text-xs text-neutral-400">...</div>}>
+        <TrackOrderClient locale={locale as "ar" | "en"} />
+      </Suspense>
     </div>
   );
 }

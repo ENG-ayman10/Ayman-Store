@@ -2,6 +2,7 @@ import React from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
 import { getProducts } from "@/actions/products";
+import { getStoreReviews } from "@/actions/reviews";
 import { ProductGrid } from "@/components/products/ProductGrid";
 import { STORE_CONFIG } from "@/config/payment";
 import {
@@ -28,6 +29,7 @@ export default async function HomePage({ params }: HomePageProps) {
   const { locale } = await params;
   const isAr = locale === "ar";
   const products = await getProducts();
+  const realReviews = await getStoreReviews(6);
 
   // Luxury Category Story Circles
   const storyCategories = [
@@ -66,37 +68,6 @@ export default async function HomePage({ params }: HomePageProps) {
       titleEn: "Scarves",
       image: "/uploads/scarf.webp",
       tag: "fashion",
-    },
-  ];
-
-  // Customer Testimonials
-  const testimonials = [
-    {
-      nameAr: "فاطمة أحمد الكبسي",
-      nameEn: "Fatima Al-Kibsi",
-      cityAr: "صنعاء - حدة",
-      cityEn: "Sanaa - Hadda",
-      rating: 5,
-      commentAr: "طلبت عباية كلاسيكية وعطر العود، الجودة فوق التوقعات والتوصيل كان في نفس اليوم! وسند الكريمي تم تأكيده مباشرة.",
-      commentEn: "Ordered the classic abaya and royal oud, quality is beyond expectations and delivery was same day!",
-    },
-    {
-      nameAr: "أروى سيف اليافعي",
-      nameEn: "Arwa Al-Yafei",
-      cityAr: "عدن - المعلا",
-      cityEn: "Aden - Al-Mualla",
-      rating: 5,
-      commentAr: "سيروم الفيتامين سي وأحمر الشفاه أصليين 100%، والتغليف راقي جداً كأنه من متجر عالمي. بارك الله فيكم.",
-      commentEn: "Vitamin C serum and lipstick are 100% authentic and the luxury packaging is stunning!",
-    },
-    {
-      nameAr: "ريم طلال الشميري",
-      nameEn: "Reem Al-Shamiri",
-      cityAr: "تعز - الحوبان",
-      cityEn: "Taiz - Al-Hawban",
-      rating: 5,
-      commentAr: "القفطان الحريري رائع ومطرز بدقة، والتعامل عبر الواتساب كان سريع ومحترم جداً. معتمدينكم دائماً.",
-      commentEn: "The silk kaftan has delicate embroidery, and WhatsApp concierge support was fast and respectful.",
     },
   ];
 
@@ -268,49 +239,72 @@ export default async function HomePage({ params }: HomePageProps) {
         <ProductGrid products={products} locale={locale as "ar" | "en"} />
       </section>
 
-      {/* 5. Customer Reviews & Social Proof */}
+      {/* 5. Real Customer Reviews & Social Proof */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="p-6 sm:p-10 rounded-3xl bg-neutral-900 text-white border border-neutral-800 space-y-8 shadow-xl">
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-500/20 text-gold-400 text-xs font-bold">
-              <Star className="w-3.5 h-3.5 fill-gold-400" />
-              <span>{isAr ? "تقييم 4.9 من 5 بناءً على مئات الطلبات" : "4.9/5 Rating from Hundreds of Orders"}</span>
+              <Sparkles className="w-3.5 h-3.5 text-gold-400" />
+              <span>{isAr ? "تقييمات موثقة من عميلاتنا الفعليات" : "Verified Customer Feedback"}</span>
             </div>
             <h3 className="text-xl sm:text-2xl font-black text-white">
-              {isAr ? "ماذا تقول عميلاتنا في مختلف المحافظات؟" : "What Our Clients Say Across Yemen"}
+              {isAr ? "آراء عميلاتنا في مختلف المحافظات اليمنية" : "What Our Clients Say Across Yemen"}
             </h3>
+            <p className="text-xs text-neutral-400 max-w-lg mx-auto leading-relaxed">
+              {isAr
+                ? "شفافية مطلقة ومصداقية كاملة: جميع التقييمات المعروضة هنا واردة من عميلات حقيقيات بعد إتمام طلباتهن واستلامها."
+                : "Complete transparency: All displayed reviews are from real customers after receiving their orders."}
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-            {testimonials.map((t, i) => (
-              <div
-                key={i}
-                className="p-5 rounded-2xl bg-neutral-800/60 border border-neutral-700/60 space-y-3 flex flex-col justify-between"
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center gap-1 text-amber-400">
-                    {[...Array(t.rating)].map((_, idx) => (
-                      <Star key={idx} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                    ))}
+          {realReviews.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+              {realReviews.map((rev) => (
+                <div
+                  key={rev.id}
+                  className="p-5 rounded-2xl bg-neutral-800/60 border border-neutral-700/60 space-y-3 flex flex-col justify-between"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1 text-amber-400">
+                      {[...Array(rev.rating)].map((_, idx) => (
+                        <Star key={idx} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                      ))}
+                    </div>
+                    <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed italic">
+                      &ldquo;{rev.comment}&rdquo;
+                    </p>
                   </div>
-                  <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed italic">
-                    &ldquo;{isAr ? t.commentAr : t.commentEn}&rdquo;
-                  </p>
-                </div>
 
-                <div className="pt-3 border-t border-neutral-700/40 flex items-center justify-between text-xs">
-                  <div>
-                    <h4 className="font-bold text-white">{isAr ? t.nameAr : t.nameEn}</h4>
-                    <span className="text-[10px] text-neutral-400">{isAr ? t.cityAr : t.cityEn}</span>
+                  <div className="pt-3 border-t border-neutral-700/40 flex items-center justify-between text-xs">
+                    <div>
+                      <h4 className="font-bold text-white">{rev.customerName}</h4>
+                      {rev.city && (
+                        <span className="text-[10px] text-neutral-400">{rev.city}</span>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>{isAr ? "عميل موثق" : "Verified"}</span>
+                    </span>
                   </div>
-                  <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>{isAr ? "عميل موثق" : "Verified"}</span>
-                  </span>
                 </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 rounded-2xl bg-neutral-800/40 border border-neutral-800 text-center space-y-3 max-w-md mx-auto">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-gold-500/20 flex items-center justify-center text-gold-400">
+                <Star className="w-6 h-6 fill-gold-400/40 text-gold-400" />
               </div>
-            ))}
-          </div>
+              <h4 className="font-bold text-sm text-white">
+                {isAr ? "نظام تقييم حقيقي 100% بدون أي تزييف" : "100% Genuine Customer Reviews"}
+              </h4>
+              <p className="text-xs text-neutral-400 leading-relaxed">
+                {isAr
+                  ? "نحن نؤمن بالشفافية الكاملة، لذلك يتم نشر آراء العملاء الحقيقيين فقط بعد إتمام كل طلب. شاركينا رأيك عند طلبك القادم!"
+                  : "We believe in authentic experiences. Reviews are collected exclusively from real buyers after placing orders."}
+              </p>
+            </div>
+          )}
         </div>
       </section>
 

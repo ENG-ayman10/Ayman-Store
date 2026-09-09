@@ -15,7 +15,9 @@ import {
   ArrowRight,
   MessageCircle,
   ExternalLink,
+  Star,
 } from "lucide-react";
+import { getAdminReviews } from "@/actions/reviews";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -30,6 +32,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
   const isAr = locale === "ar";
   const stats = await getOrderStats();
   const allOrders = await getAdminOrders();
+  const reviews = await getAdminReviews();
   const recentOrders = allOrders.slice(0, 5);
 
   return (
@@ -68,7 +71,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
         {/* Total Orders */}
         <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 shadow-xs space-y-2">
           <div className="flex items-center justify-between">
@@ -131,6 +134,31 @@ export default async function AdminPage({ params }: AdminPageProps) {
             {stats.shipped}
           </div>
         </div>
+
+        {/* Customer Reviews Metric */}
+        <Link
+          href="/admin/reviews"
+          className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 shadow-xs space-y-2 hover:border-gold-500/50 transition block group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-amber-600 dark:text-amber-400 group-hover:underline">
+              {isAr ? "تقييمات العملاء" : "Customer Ratings"}
+            </span>
+            <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400">
+              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+            </div>
+          </div>
+          <div className="text-2xl font-black font-mono text-neutral-900 dark:text-white flex items-center gap-1.5">
+            <span>
+              {reviews.length > 0
+                ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
+                : "0.0"}
+            </span>
+            <span className="text-xs font-normal text-neutral-400 font-sans">
+              ({reviews.length} {isAr ? "تقييم" : "revs"})
+            </span>
+          </div>
+        </Link>
       </div>
 
       {/* Recent Orders Section */}

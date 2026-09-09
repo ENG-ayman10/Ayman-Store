@@ -152,13 +152,12 @@ export function ProductCard({ product, locale }: ProductCardProps) {
       {/* Product Content Details */}
       <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between space-y-2.5">
         <div className="space-y-1.5">
-          {/* Rating and Reviews */}
+          {/* Authentic badges */}
           <div className="flex items-center justify-between gap-1 text-[10px] sm:text-xs">
-            <div className="flex items-center gap-1 text-amber-500">
-              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-              <span className="font-black text-neutral-800 dark:text-neutral-200">4.9</span>
-              <span className="text-neutral-400 text-[10px]">(48)</span>
-            </div>
+            <span className="inline-flex items-center gap-1 text-gold-600 dark:text-gold-400 font-bold text-[10px]">
+              <Sparkles className="w-3 h-3 text-gold-500" />
+              <span>{isAr ? "أصلي مضمون" : "100% Authentic"}</span>
+            </span>
 
             <span className="text-[10px] text-neutral-400">
               {variantCount > 1

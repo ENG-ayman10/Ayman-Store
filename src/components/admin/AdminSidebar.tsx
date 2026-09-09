@@ -13,6 +13,7 @@ import {
   LogOut,
   Loader2,
   ShieldCheck,
+  Star,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -48,6 +49,12 @@ export function AdminSidebar({ locale }: AdminSidebarProps) {
       label: isAr ? "إدارة الطلبات" : "Orders Management",
       icon: Layers,
       active: pathname === "/admin/orders",
+    },
+    {
+      href: "/admin/reviews",
+      label: isAr ? "تقييمات وآراء العملاء" : "Customer Reviews",
+      icon: Star,
+      active: pathname === "/admin/reviews",
     },
   ];
 

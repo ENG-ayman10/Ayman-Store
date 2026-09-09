@@ -23,6 +23,7 @@ import { YEMEN_GOVERNORATES } from "@/config/yemenGovernorates";
 import { STORE_CONFIG } from "@/config/payment";
 import { CurrencyBadge } from "@/components/common/CurrencyBadge";
 import { Link } from "@/i18n/routing";
+import { OrderSuccessReviewModal } from "./OrderSuccessReviewModal";
 
 export function CheckoutForm({ locale }: { locale: "ar" | "en" }) {
   const { items, getSubtotal, clearCart, updateQuantity, removeItem } = useCartStore();
@@ -30,6 +31,12 @@ export function CheckoutForm({ locale }: { locale: "ar" | "en" }) {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [reorderBanner, setReorderBanner] = useState<{ fromOrderCode?: string } | null>(null);
+  const [successModalData, setSuccessModalData] = useState<{
+    orderCode: string;
+    whatsappUrl: string;
+    customerName: string;
+    city?: string;
+  } | null>(null);
   const [formData, setFormData] = useState({
     customerName: "",
     phone: "",
@@ -134,8 +141,13 @@ export function CheckoutForm({ locale }: { locale: "ar" | "en" }) {
           localStorage.removeItem("ayman-store-reorder-prefill");
         } catch {}
         clearCart();
-        // Redirect to WhatsApp URL
-        window.location.href = res.whatsappUrl;
+        // Show festive post-checkout review modal
+        setSuccessModalData({
+          orderCode: res.orderCode || `AYMAN-${Math.floor(100000 + Math.random() * 900000)}`,
+          whatsappUrl: res.whatsappUrl,
+          customerName: formData.customerName,
+          city: formData.city,
+        });
       } else {
         setErrorMessage(res.error || (isAr ? "تعذر تسجيل الطلب، يرجى المحاولة ثانية." : "Failed to register order. Please try again."));
       }
@@ -147,7 +159,7 @@ export function CheckoutForm({ locale }: { locale: "ar" | "en" }) {
     }
   };
 
-  if (items.length === 0) {
+  if (items.length === 0 && !successModalData) {
     return (
       <div className="max-w-md mx-auto py-16 text-center space-y-4">
         <div className="w-16 h-16 mx-auto rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-400">
@@ -440,6 +452,18 @@ export function CheckoutForm({ locale }: { locale: "ar" | "en" }) {
           </div>
         </div>
       </div>
+
+      {/* Order Success & Real Review Modal */}
+      {successModalData && (
+        <OrderSuccessReviewModal
+          orderCode={successModalData.orderCode}
+          whatsappUrl={successModalData.whatsappUrl}
+          customerName={successModalData.customerName}
+          city={successModalData.city}
+          locale={locale}
+          onClose={() => setSuccessModalData(null)}
+        />
+      )}
     </div>
   );
 }

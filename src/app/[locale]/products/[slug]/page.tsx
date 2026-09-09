@@ -1,6 +1,7 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import { getProductBySlug } from "@/actions/products";
+import { getProductReviews } from "@/actions/reviews";
 import { ProductDetailClient } from "./ProductDetailClient";
 import { Link } from "@/i18n/routing";
 import { ArrowLeft, ArrowRight, Home } from "lucide-react";
@@ -32,6 +33,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
+  const reviews = await getProductReviews(product.id);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Breadcrumb Navigation */}
@@ -58,7 +61,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
       </nav>
 
       {/* Main product presentation */}
-      <ProductDetailClient product={product} locale={locale as "ar" | "en"} />
+      <ProductDetailClient
+        product={product}
+        initialReviews={reviews}
+        locale={locale as "ar" | "en"}
+      />
     </div>
   );
 }

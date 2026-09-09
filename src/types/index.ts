@@ -107,3 +107,16 @@ export interface CartItem {
   quantity: number;
   maxStock: number;
 }
+
+export interface ReviewType {
+  id: string;
+  orderCode?: string | null;
+  productId?: string | null;
+  customerName: string;
+  rating: number;
+  comment: string;
+  city?: string | null;
+  isApproved: boolean;
+  createdAt: string | Date;
+}
+

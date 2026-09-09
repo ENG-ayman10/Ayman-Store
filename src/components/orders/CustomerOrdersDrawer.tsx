@@ -28,6 +28,7 @@ import {
   Check,
   ShoppingBag,
   Clock,
+  Star,
 } from "lucide-react";
 
 interface CustomerOrdersDrawerProps {
@@ -433,34 +434,50 @@ export function CustomerOrdersDrawer({ locale }: CustomerOrdersDrawerProps) {
                       />
                     </div>
 
-                    {/* LUXURY RE-ORDER ACTION BUTTON */}
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        disabled={isReordering}
-                        onClick={() => handleReorder(order)}
-                        className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-gold-500 via-gold-600 to-gold-700 hover:from-gold-600 hover:to-gold-800 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-gold-600/20 hover:shadow-lg transition-all disabled:opacity-50 active:scale-[0.99]"
-                      >
-                        {isReordering ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>{isAr ? "جاري تجهيز السلة والطلب..." : "Preparing re-order..."}</span>
-                          </>
-                        ) : (
-                          <>
-                            <RotateCcw className="w-4 h-4" />
-                            <span>
-                              {isAr
-                                ? "تكرار هذا الطلب مع إمكانية التعديل 🔁"
-                                : "Re-order with full customization 🔁"}
-                            </span>
-                          </>
-                        )}
-                      </button>
-                      <p className="text-[10px] text-center text-neutral-400 mt-1.5">
+                    {/* LUXURY RE-ORDER & TRACK ACTION BUTTONS */}
+                    <div className="pt-2 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={isReordering}
+                          onClick={() => handleReorder(order)}
+                          className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-gold-500 via-gold-600 to-gold-700 hover:from-gold-600 hover:to-gold-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs hover:shadow-md transition-all disabled:opacity-50 active:scale-[0.99]"
+                        >
+                          {isReordering ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>{isAr ? "جاري التجهيز..." : "Preparing..."}</span>
+                            </>
+                          ) : (
+                            <>
+                              <RotateCcw className="w-3.5 h-3.5" />
+                              <span>
+                                {isAr
+                                  ? "تكرار الطلب 🔁"
+                                  : "Re-order 🔁"}
+                              </span>
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            closeOrders();
+                            router.push(`/track?code=${order.orderCode}`);
+                          }}
+                          className="py-2.5 px-3 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-[0.99] shrink-0 shadow-2xs"
+                          title={isAr ? "تتبع حالة الشحنة وإضافة تقييم" : "Track shipment and rate"}
+                        >
+                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                          <span>{isAr ? "تتبع وتقييم" : "Track & Rate"}</span>
+                        </button>
+                      </div>
+
+                      <p className="text-[10px] text-center text-neutral-400">
                         {isAr
-                          ? "💡 يمكنك بعد الضغط تعديل الكميات أو حذف وإضافة منتجات وتغيير العنوان بالكامل"
-                          : "💡 You can modify quantities, change delivery address, or add new items at checkout"}
+                          ? "💡 يمكنك تكرار وتعديل الطلب بضغطة واحدة، أو تتبعه وتقييم تجربتك بعد الاستلام"
+                          : "💡 Re-order in 1-click or track delivery status and submit your rating"}
                       </p>
                     </div>
                   </div>

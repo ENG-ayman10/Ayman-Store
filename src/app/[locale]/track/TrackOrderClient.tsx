@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "@/i18n/routing";
+import { useSearchParams } from "next/navigation";
 import { trackOrder } from "@/actions/orders";
 import { useCustomerOrdersStore } from "@/store/useCustomerOrdersStore";
 import type { OrderType, OrderStatus } from "@/types";
@@ -25,7 +26,10 @@ import {
   RotateCcw,
   BookmarkPlus,
   BookmarkCheck,
+  Star,
+  Check,
 } from "lucide-react";
+import { submitCustomerReview } from "@/actions/reviews";
 
 interface TrackOrderClientProps {
   locale: "ar" | "en";
@@ -42,7 +46,53 @@ export function TrackOrderClient({ locale }: TrackOrderClientProps) {
   const [order, setOrder] = useState<OrderType | null>(null);
   const [reordering, setReordering] = useState(false);
 
+  const searchParams = useSearchParams();
+  const initialCode = searchParams.get("code") || searchParams.get("q") || "";
+
+  useEffect(() => {
+    if (initialCode && !searched) {
+      setQuery(initialCode);
+      setLoading(true);
+      setSearched(true);
+      trackOrder(initialCode.trim())
+        .then((res) => setOrder(res))
+        .catch((err) => {
+          console.error(err);
+          setOrder(null);
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [initialCode, searched]);
+
+  // Review states
+  const [rating, setRating] = useState<number>(5);
+  const [hoverRating, setHoverRating] = useState<number>(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+
   const isSaved = order ? savedOrderCodes.includes(order.orderCode.toUpperCase()) : false;
+
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!order) return;
+    setSubmittingReview(true);
+    try {
+      await submitCustomerReview({
+        orderCode: order.orderCode,
+        customerName: order.customerName,
+        rating,
+        comment: reviewComment,
+        city: order.city,
+        productId: order.items?.[0]?.productId || undefined,
+      });
+      setReviewSubmitted(true);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   const handleReorder = () => {
     if (!order) return;
@@ -348,6 +398,97 @@ export function TrackOrderClient({ locale }: TrackOrderClientProps) {
                 <span>{isAr ? "تكرار وتعديل الطلب 🔁" : "Re-order & Customize 🔁"}</span>
               </button>
             </div>
+          </div>
+
+          {/* Authentic Review & Rating Card */}
+          <div className="p-5 rounded-2xl bg-neutral-50/80 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-800 space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-black text-neutral-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  <span>{isAr ? "رأيك يهمنا • تقييم الطلب والخدمة" : "Rate Your Order Experience"}</span>
+                </h4>
+                <p className="text-[11px] text-neutral-500 mt-0.5">
+                  {isAr
+                    ? "شاركي رأيك الحقيقي ليظهر كتقييم موثق للعميلات بعد الشراء."
+                    : "Share your authentic feedback to help future shoppers."}
+                </p>
+              </div>
+            </div>
+
+            {reviewSubmitted ? (
+              <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-center space-y-1">
+                <div className="w-8 h-8 rounded-full bg-emerald-600 text-white mx-auto flex items-center justify-center">
+                  <Check className="w-4 h-4" />
+                </div>
+                <div className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                  {isAr ? "تم إرسال تقييمك بنجاح!" : "Review Submitted Successfully!"}
+                </div>
+                <div className="text-[11px] text-emerald-600 dark:text-emerald-400">
+                  {isAr ? "شكراً لمشاركتك رأيك القيّم مع متجر أيمن ❤️" : "Thank you for your valuable feedback!"}
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleReviewSubmit} className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-neutral-600 dark:text-neutral-300 font-bold">
+                    {isAr ? "تقييمك العام:" : "Your Rating:"}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => {
+                      const filled = (hoverRating || rating) >= star;
+                      return (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setRating(star)}
+                          onMouseEnter={() => setHoverRating(star)}
+                          onMouseLeave={() => setHoverRating(0)}
+                          className="p-1 hover:scale-125 transition-transform"
+                        >
+                          <Star
+                            className={`w-6 h-6 ${
+                              filled
+                                ? "fill-amber-400 text-amber-400 drop-shadow-xs"
+                                : "text-neutral-300 dark:text-neutral-700"
+                            }`}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    rows={2}
+                    placeholder={
+                      isAr
+                        ? "اكتبي كلمتك أو رأيك في المنتجات وسرعة التوصيل وخدمة العملاء..."
+                        : "Write your feedback on items quality, delivery speed, concierge..."
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-gold-500/40 resize-none placeholder:text-neutral-400"
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={submittingReview}
+                    className="py-2 px-5 rounded-xl bg-neutral-950 dark:bg-gold-500 hover:bg-neutral-800 dark:hover:bg-gold-600 text-white dark:text-neutral-950 font-bold text-xs flex items-center gap-2 transition active:scale-95 disabled:opacity-50"
+                  >
+                    {submittingReview ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Check className="w-3.5 h-3.5" />
+                    )}
+                    <span>{isAr ? "إرسال التقييم الموثّق" : "Submit Verified Review"}</span>
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
 
           {/* WhatsApp Support Callout */}

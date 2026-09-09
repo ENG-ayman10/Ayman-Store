@@ -48,6 +48,7 @@ model Product {
   isFeatured  Boolean          @default(false)
   variants    ProductVariant[]
   orderItems  OrderItem[]
+  reviews     Review[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
@@ -118,4 +119,22 @@ model OrderItem {
   @@index([orderId])
   @@index([productId])
   @@index([variantId])
+}
+
+model Review {
+  id           String   @id @default(cuid())
+  orderCode    String?
+  productId    String?
+  product      Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  customerName String
+  rating       Int      @default(5)
+  comment      String
+  city         String?
+  isApproved   Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@index([productId])
+  @@index([orderCode])
+  @@index([createdAt])
+  @@index([isApproved])
 }
