@@ -5,7 +5,8 @@ import { useCartStore } from "@/store/useCartStore";
 import { processOrderCheckout } from "@/actions/checkout";
 import { BankTransferCard } from "./BankTransferCard";
 import { LocationPickerMap } from "./LocationPickerMap";
-import { MessageCircle, Loader2, ShieldCheck, ShoppingBag, ArrowLeft, ArrowRight } from "lucide-react";
+import { MessageCircle, Loader2, ShieldCheck, ShoppingBag, ArrowLeft, ArrowRight, ChevronDown } from "lucide-react";
+import { YEMEN_GOVERNORATES } from "@/config/yemenGovernorates";
 import { STORE_CONFIG } from "@/config/payment";
 import { CurrencyBadge } from "@/components/common/CurrencyBadge";
 import { Link } from "@/i18n/routing";
@@ -22,6 +23,17 @@ export function CheckoutForm({ locale }: { locale: "ar" | "en" }) {
     notes: "",
   });
   const [locationUrl, setLocationUrl] = useState<string | null>(null);
+  const [selectedGovCoords, setSelectedGovCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  const handleGovernorateChange = (govName: string) => {
+    setFormData((prev) => ({ ...prev, city: govName }));
+    const found = YEMEN_GOVERNORATES.find(
+      (g) => g.nameAr === govName || g.nameEn === govName
+    );
+    if (found) {
+      setSelectedGovCoords({ lat: found.lat, lng: found.lng });
+    }
+  };
 
   const isAr = locale === "ar";
   const subtotal = getSubtotal();
@@ -142,16 +154,28 @@ export function CheckoutForm({ locale }: { locale: "ar" | "en" }) {
             </div>
             <div>
               <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
-                {isAr ? "المدينة / المحافظة" : "City / Governorate"} <span className="text-red-500">*</span>
+                {isAr ? "المحافظة" : "Governorate"} <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                required
-                placeholder={isAr ? "صنعاء، عدن، تعز، إب..." : "Sana'a, Aden, Taiz, Ibb..."}
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-xs text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-gold-500 shadow-2xs transition"
-              />
+              <div className="relative">
+                <select
+                  required
+                  value={formData.city}
+                  onChange={(e) => handleGovernorateChange(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-xs text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-gold-500 shadow-2xs transition appearance-none cursor-pointer font-bold"
+                >
+                  <option value="" disabled>
+                    {isAr ? "-- اختاري المحافظة (جميع المحافظات الـ 22) --" : "-- Select Yemeni Governorate --"}
+                  </option>
+                  {YEMEN_GOVERNORATES.map((gov) => (
+                    <option key={gov.id} value={isAr ? gov.nameAr : gov.nameEn}>
+                      {isAr ? gov.nameAr : gov.nameEn}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 end-3 flex items-center pointer-events-none text-neutral-400">
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -171,6 +195,7 @@ export function CheckoutForm({ locale }: { locale: "ar" | "en" }) {
             {/* Interactive GPS Map Picker */}
             <LocationPickerMap
               onLocationChange={(url) => setLocationUrl(url)}
+              targetCoords={selectedGovCoords}
               locale={locale}
             />
           </div>

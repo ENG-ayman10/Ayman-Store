@@ -18,10 +18,11 @@ const LocationMapInner = dynamic(() => import("./LocationMapInner"), {
 
 interface LocationPickerMapProps {
   onLocationChange: (url: string | null) => void;
+  targetCoords?: { lat: number; lng: number } | null;
   locale: "ar" | "en";
 }
 
-export function LocationPickerMap({ onLocationChange, locale }: LocationPickerMapProps) {
+export function LocationPickerMap({ onLocationChange, targetCoords, locale }: LocationPickerMapProps) {
   const isAr = locale === "ar";
   const [isOpen, setIsOpen] = useState(false);
   const [hasPinned, setHasPinned] = useState(false);
@@ -78,7 +79,11 @@ export function LocationPickerMap({ onLocationChange, locale }: LocationPickerMa
       {/* Map View */}
       {isOpen && (
         <div className="animate-in fade-in zoom-in-95 duration-200">
-          <LocationMapInner onSelectLocation={handleSelect} locale={locale} />
+          <LocationMapInner
+            onSelectLocation={handleSelect}
+            targetCoords={targetCoords}
+            locale={locale}
+          />
         </div>
       )}
     </div>
